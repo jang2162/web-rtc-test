@@ -1,0 +1,7 @@
+{
+  "watch": [
+    "server/**/*"
+  ],
+  "ext": "*",
+  "exec": "npm run server"
+}
