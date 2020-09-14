@@ -72,6 +72,7 @@ $(async function (){
             host: '192.168.0.169',
             port: 3000,
             path: '/webrtc',
+            debug: 3
         });
         conn = peer.connect($b.val());
         conn.on('open', () => {
