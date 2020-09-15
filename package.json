@@ -16,12 +16,15 @@
   "dependencies": {
     "express": "^4.17.1",
     "jquery": "^3.5.1",
+    "kurento-client": "^6.14.0",
+    "kurento-utils": "^6.14.0",
     "nodemon": "^2.0.4",
     "peer": "^0.5.3",
     "peerjs": "^1.3.1",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
-    "webrtc-adapter": "^7.7.0"
+    "webrtc-adapter": "^7.7.0",
+    "ws": "^7.3.1"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^6.1.0",
