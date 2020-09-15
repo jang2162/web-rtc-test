@@ -21,8 +21,7 @@ var options =
     };
 
 var app = express();
-app.use(express.static(path.join(__dirname, 'static')));
-
+app.use(express.static('public'));
 
 /*
  * Definition of global variables.
