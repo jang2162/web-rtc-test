@@ -136,12 +136,14 @@ function callResponse(message) {
         stop(true);
     } else {
         setCallState(IN_CALL);
+        console.log("sdpAnswer: " + message.sdpAnswer);
         webRtcPeer.processAnswer(message.sdpAnswer);
     }
 }
 
 function startCommunication(message) {
     setCallState(IN_CALL);
+    console.log("sdpAnswer: " + message.sdpAnswer);
     webRtcPeer.processAnswer(message.sdpAnswer);
 }
 
@@ -159,9 +161,7 @@ function incomingCall(message) {
     }
 
     setCallState(PROCESSING_CALL);
-    if (confirm('User ' + message.from
-        + ' is calling you. Do you accept the call?')) {
-        showSpinner(videoInput, videoOutput);
+    if (confirm('User ' + message.from + ' is calling you. Do you accept the call?')) {
 
         const options = {
             localVideo : videoInput,
@@ -181,6 +181,7 @@ function incomingCall(message) {
                         console.error(error);
                         setCallState(NO_CALL);
                     }
+                    console.log('sdpOffer: ' + offerSdp);
                     const response = {
                         id : 'incomingCallResponse',
                         from : message.from,
@@ -228,8 +229,6 @@ function call() {
 
     setCallState(PROCESSING_CALL);
 
-    showSpinner(videoInput, videoOutput);
-
     const options = {
         localVideo : videoInput,
         remoteVideo : videoOutput,
@@ -248,6 +247,7 @@ function call() {
                 console.error(error);
                 setCallState(NO_CALL);
             }
+            console.log('sdpOffer: ' + offerSdp);
             const message = {
                 id : 'call',
                 from : document.getElementById('name').value,
@@ -257,7 +257,6 @@ function call() {
             sendMessage(message);
         });
     });
-
 }
 
 function stop(message) {
@@ -273,7 +272,6 @@ function stop(message) {
             sendMessage(message);
         }
     }
-    hideSpinner(videoInput, videoOutput);
 }
 
 function sendMessage(message) {
@@ -292,17 +290,6 @@ function onIceCandidate(candidate) {
     sendMessage(message);
 }
 
-function showSpinner() {
-    for (let i = 0; i < arguments.length; i++) {
-        arguments[i].poster = './img/transparent-1px.png';
-        arguments[i].style.background = 'center transparent url("./img/spinner.gif") no-repeat';
-    }
-}
-
-function hideSpinner() {
-    for (let i = 0; i < arguments.length; i++) {
-        arguments[i].src = '';
-        arguments[i].poster = './img/webrtc.png';
-        arguments[i].style.background = '';
-    }
-}
+// sdpAnswer
+// offerSdp
+// IceCandidate
