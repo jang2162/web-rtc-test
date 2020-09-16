@@ -4,10 +4,11 @@ import {CallMediaPipeline} from './CallMediaPipeline'
 import {UserSession} from './UserSession'
 import {UserRegistry} from './UserRegistry'
 
-var userRegistry = new UserRegistry();
-var pipelines = {};
-var candidatesQueue = {};
-var idCounter = 0;
+const userRegistry = new UserRegistry();
+const pipelines = {};
+const rooms = [];
+const candidatesQueue = {};
+let idCounter = 0;
 
 export const groupCallWs = (server) => {
     init(
@@ -42,6 +43,11 @@ function init(wss) {
             switch (message.id) {
                 case 'register':
                     register(sessionId, message.name, ws);
+                    break;
+
+                case 'createRoom':
+                    createRoom(sessionId, ws);
+
                     break;
 
                 case 'call':
@@ -215,6 +221,22 @@ function register(id, name, ws, callback) {
         ws.send(JSON.stringify({id: 'registerResponse', response: 'accepted'}));
     } catch(exception) {
         onError(exception);
+    }
+}
+
+function createRoom(id, ws) {
+    const user = userRegistry.getById(id).name;
+    rooms.push({
+        id: id + '-' + new Date().getTime(),
+        name: user.name + id + '-' + new Date().getTime(),
+        moderator: id
+    });
+
+    for (const i in userRegistry.usersById) {
+        userRegistry.usersById[i].ws.send(JSON.stringify({
+            id: 'newRooms',
+            rooms
+        }))
     }
 }
 

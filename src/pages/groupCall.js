@@ -51,8 +51,35 @@ $(function () {
             });
         });
         $meVideo[0].play();
-    })
+    });
+
+    $createRoom.on('click', function () {
+        sendMessage({
+            id : 'createRoom'
+        });
+    });
 })
+
+window.onbeforeunload = function() {
+    ws.close();
+}
+
+ws.onmessage = function(message) {
+    const parsedMessage = JSON.parse(message.data);
+    console.info('Received message: ' + message.data);
+
+    switch (parsedMessage.id) {
+        case 'newRooms':
+            console.log(parsedMessage);
+            break;
+
+        case 'iceCandidate':
+            webRtcPeer.addIceCandidate(parsedMessage.candidate)
+            break;
+        default:
+            console.error('Unrecognized message', parsedMessage);
+    }
+}
 
 function onIceCandidate(candidate) {
     console.log('Local candidate' + JSON.stringify(candidate));
