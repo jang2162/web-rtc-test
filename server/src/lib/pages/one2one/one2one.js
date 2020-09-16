@@ -13,12 +13,12 @@ var candidatesQueue = {};
 var idCounter = 0;
 
 export const one2oneWs = (server) => {
-    init(
-        new ws.Server({
-            server,
-            path : '/one2one'
-        })
-    )
+    // init(
+    //     new ws.Server({
+    //         server,
+    //         path : '/one2one'
+    //     })
+    // )
 }
 
 function init(wss) {

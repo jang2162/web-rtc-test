@@ -1,5 +1,4 @@
 import $ from 'jquery';
-import Peer from 'peerjs';
 
 $(async function (){
     const $a = $("#a")
