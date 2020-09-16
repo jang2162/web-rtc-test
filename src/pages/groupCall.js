@@ -49,6 +49,7 @@ $(function () {
                 sdpOffer = offerSdp;
             });
         });
+        webRtcPeer.showLocalVideo();
     })
 })
 
