@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import {WebRtcPeer} from 'kurento-utils'
 
-let ws = new WebSocket('wss://' + location.host + '/groupCall');
+let ws = new WebSocket('wss://' + location.host + '/group-call');
 let webRtcPeer = null;
 let sdpOffer = null;
 

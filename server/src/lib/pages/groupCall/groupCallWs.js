@@ -16,7 +16,7 @@ export const groupCallWs = (server) => {
     init(
         new ws.Server({
             server,
-            path : '/groupCall'
+            path : '/group-call'
         })
     )
 }
