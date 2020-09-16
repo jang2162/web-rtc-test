@@ -14,6 +14,7 @@ $(function () {
     const $rooms = $("#rooms");
     const $chat = $("#chat");
     const $me = $("#me");
+    const $meVideo = $me.find('video');
     const $streams = $("#streams");
 
     $nameOk.on('click',function () {
@@ -31,7 +32,7 @@ $(function () {
         $step2.show();
         $me.find('span').text(name);
         const options = {
-            localVideo : $me.find('video')[0],
+            localVideo : $meVideo[0],
             onicecandidate : onIceCandidate
         }
 
@@ -49,7 +50,7 @@ $(function () {
                 sdpOffer = offerSdp;
             });
         });
-        webRtcPeer.showLocalVideo();
+        $meVideo[0].play();
     })
 })
 

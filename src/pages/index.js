@@ -16,7 +16,6 @@ $(async function (){
             video: {
                 width: 480,
                 height: 270,
-                mediaSource: "tab"
             }
         });
         /* 스트림 사용 */
