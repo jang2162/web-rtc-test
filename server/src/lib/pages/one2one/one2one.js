@@ -1,7 +1,7 @@
 /*
  * Definition of global variables.
  */
-
+import * as kurento from 'kurento-client';
 import * as ws from 'ws'
 import {CallMediaPipeline} from './CallMediaPipeline'
 import {UserSession} from './UserSession'

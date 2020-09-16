@@ -1,7 +1,4 @@
-/*
- * Definition of global variables.
- */
-
+import * as kurento from 'kurento-client';
 import * as ws from 'ws'
 import {CallMediaPipeline} from './CallMediaPipeline'
 import {UserSession} from './UserSession'
@@ -24,7 +21,6 @@ export const groupCallWs = (server) => {
 
 function init(wss) {
     wss.on('connection', function(ws) {
-        console.log(2134);
         var sessionId = nextUniqueId();
         console.log('Connection received with sessionId ' + sessionId);
 
