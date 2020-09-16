@@ -225,10 +225,10 @@ function register(id, name, ws, callback) {
 }
 
 function createRoom(id, ws) {
-    const user = userRegistry.getById(id).name;
+    const name = userRegistry.getById(id).name;
     rooms.push({
         id: id + '-' + new Date().getTime(),
-        name: user.name + id + '-' + new Date().getTime(),
+        name: name + id + '-' + new Date().getTime(),
         moderator: id
     });
 
