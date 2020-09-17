@@ -4,18 +4,27 @@ import {WebRtcPeer} from 'kurento-utils'
 let ws = new WebSocket('wss://' + location.host + '/group-call');
 let webRtcPeer = null;
 let sdpOffer = null;
-
+let $step1;
+let $nameInp;
+let $nameOk;
+let $step2;
+let $createRoom;
+let $rooms;
+let $chat;
+let $me;
+let $meVideo;
+let $streams;
 $(function () {
-    const $step1 = $("#step1");
-    const $nameInp = $("#nameInp");
-    const $nameOk = $("#nameOk");
-    const $step2 = $("#step2").hide();
-    const $createRoom = $("#createRoom");
-    const $rooms = $("#rooms");
-    const $chat = $("#chat");
-    const $me = $("#me");
-    const $meVideo = $me.find('video');
-    const $streams = $("#streams");
+    $step1 = $("#step1");
+    $nameInp = $("#nameInp");
+    $nameOk = $("#nameOk");
+    $step2 = $("#step2").hide();
+    $createRoom = $("#createRoom").prop('disabled', true);
+    $rooms = $("#rooms");
+    $chat = $("#chat");
+    $me = $("#me");
+    $meVideo = $me.find('video');
+    $streams = $("#streams");
 
     $nameOk.on('click',function () {
         const name = $nameInp.val().trim();
@@ -48,6 +57,7 @@ $(function () {
                     return;
                 }
                 sdpOffer = offerSdp;
+                $createRoom.prop('disabled', false);
             });
         });
         $meVideo[0].play();
@@ -55,9 +65,20 @@ $(function () {
 
     $createRoom.on('click', function () {
         sendMessage({
-            id : 'createRoom'
+            id : 'createRoom',
+            sdpOffer
         });
+        $(this).remove();
     });
+
+    $rooms.on('click', 'li>button', function () {
+        const roomId = $(this).data('room-id');
+        sendMessage({
+            id : 'join',
+            sdpOffer,
+            roomId
+        });
+    })
 })
 
 window.onbeforeunload = function() {
@@ -67,9 +88,14 @@ window.onbeforeunload = function() {
 ws.onmessage = function(message) {
     const parsedMessage = JSON.parse(message.data);
     console.info('Received message: ' + message.data);
-
     switch (parsedMessage.id) {
         case 'newRooms':
+            newRooms(parsedMessage.rooms);
+            break;
+        case 'registerResponse':
+            newRooms(parsedMessage.rooms);
+            break;
+        case 'join':
             console.log(parsedMessage);
             break;
 
@@ -78,6 +104,18 @@ ws.onmessage = function(message) {
             break;
         default:
             console.error('Unrecognized message', parsedMessage);
+    }
+}
+
+function newRooms(rooms) {
+    $rooms.html("");
+    for (const room of rooms) {
+        $rooms.append(
+            $("<li/>").append([
+                $("<span/>").html(room.name),
+                $("<button/>").text('join').data('room-id', room.id)
+            ])
+        )
     }
 }
 

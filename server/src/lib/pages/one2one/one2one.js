@@ -248,3 +248,8 @@ function nextUniqueId() {
 }
 
 
+export {
+    candidatesQueue,
+    userRegistry
+}
+

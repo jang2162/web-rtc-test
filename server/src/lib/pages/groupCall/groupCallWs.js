@@ -46,8 +46,10 @@ function init(wss) {
                     break;
 
                 case 'createRoom':
-                    createRoom(sessionId, ws);
-
+                    createRoom(sessionId, message.sdpOffer, ws);
+                    break;
+                case 'join':
+                    join(sessionId, message.sdpOffer, message.roomId, ws);
                     break;
 
                 case 'call':
@@ -218,26 +220,63 @@ function register(id, name, ws, callback) {
 
     userRegistry.register(new UserSession(id, name, ws));
     try {
-        ws.send(JSON.stringify({id: 'registerResponse', response: 'accepted'}));
+        ws.send(JSON.stringify({id: 'registerResponse', response: 'accepted', rooms}));
     } catch(exception) {
         onError(exception);
     }
 }
 
-function createRoom(id, ws) {
-    const name = userRegistry.getById(id).name;
+function createRoom(id, sdpOffer, ws) {
+    const user = userRegistry.getById(id);
+    user.joined = true;
     rooms.push({
         id: id + '-' + new Date().getTime(),
-        name: name + id + '-' + new Date().getTime(),
+        name: user.name + '-' + id + '-' + new Date().getTime(),
+        sdpOffer,
+        joinList: [{user, sdpOffer}],
         moderator: id
     });
 
     for (const i in userRegistry.usersById) {
+        if (userRegistry.usersById[i].joined) {
+            continue;
+        }
+
         userRegistry.usersById[i].ws.send(JSON.stringify({
             id: 'newRooms',
             rooms
         }))
     }
+}
+
+function join(id, sdpOffer, roomId, ws) {
+    const user = userRegistry.getById(id);
+    const room = rooms.find(item => item.roomId === roomId);
+    if (!room) {
+        ws.send(JSON.stringify({
+            id: 'joinResponse',
+            error: 'roomNotFound'
+        }));
+    }
+
+    ws.send(JSON.stringify({
+        id: 'joinResponse',
+    }));
+
+    for (const joinInfo of room.joinList) {
+        joinInfo.user.ws.send(JSON.stringify({
+            id: 'newJoin',
+            info: {
+                user,
+                sdpOffer
+            }
+        }))
+    }
+
+    room.joinList.push({
+        user,
+        sdpOffer
+    });
 }
 
 function clearCandidatesQueue(sessionId) {
@@ -267,4 +306,8 @@ function nextUniqueId() {
     return idCounter.toString();
 }
 
+export {
+    candidatesQueue,
+    userRegistry
+}
 

@@ -1,3 +1,5 @@
+import {candidatesQueue, userRegistry} from './one2one';
+import {getKurentoClient} from '../../getKurentoClient'
 
 export class CallMediaPipeline {
     // pipelrsndpoint;
