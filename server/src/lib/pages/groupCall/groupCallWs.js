@@ -1,9 +1,7 @@
 import * as kurento from 'kurento-client';
-import * as ws from 'ws'
-import {CallMediaPipeline} from './CallMediaPipeline'
 import {UserSession} from './UserSession'
 import {UserRegistry} from './UserRegistry'
-import {GroupCallRoom} from 'src/lib/pages/groupCall/GroupCallRoom'
+import {GroupCallRoom} from './GroupCallRoom'
 
 const userRegistry = new UserRegistry();
 const pipelines = {};
