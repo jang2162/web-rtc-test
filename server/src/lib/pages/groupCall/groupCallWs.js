@@ -10,72 +10,60 @@ const rooms = [];
 const candidatesQueue = {};
 let idCounter = 0;
 
-export const groupCallWs = (server) => {
-    init(
-        new ws.Server({
-            server,
-            path : '/group-call'
-        })
-    )
-}
+export function groupCallWs(ws) {
+    var sessionId = nextUniqueId();
+    console.log('Connection received with sessionId ' + sessionId);
 
+    ws.on('error', function(error) {
+        console.log('Connection ' + sessionId + ' error');
+        stop(sessionId);
+    });
 
-function init(wss) {
-    wss.on('connection', function(ws) {
-        var sessionId = nextUniqueId();
-        console.log('Connection received with sessionId ' + sessionId);
+    ws.on('close', function() {
+        console.log('Connection ' + sessionId + ' closed');
+        stop(sessionId);
+        userRegistry.unregister(sessionId);
+    });
 
-        ws.on('error', function(error) {
-            console.log('Connection ' + sessionId + ' error');
-            stop(sessionId);
-        });
+    ws.on('message', function(_message) {
+        var message = JSON.parse(_message);
+        console.log('Connection ' + sessionId + ' received message ', message);
 
-        ws.on('close', function() {
-            console.log('Connection ' + sessionId + ' closed');
-            stop(sessionId);
-            userRegistry.unregister(sessionId);
-        });
+        switch (message.id) {
+            case 'register':
+                register(sessionId, message.name, ws);
+                break;
 
-        ws.on('message', function(_message) {
-            var message = JSON.parse(_message);
-            console.log('Connection ' + sessionId + ' received message ', message);
+            case 'createRoom':
+                createRoom(sessionId, message.sdpOffer, ws);
+                break;
+            case 'join':
+                join(sessionId, message.sdpOffer, message.roomId, ws);
+                break;
 
-            switch (message.id) {
-                case 'register':
-                    register(sessionId, message.name, ws);
-                    break;
+            case 'call':
+                call(sessionId, message.to, message.from, message.sdpOffer);
+                break;
 
-                case 'createRoom':
-                    createRoom(sessionId, message.sdpOffer, ws);
-                    break;
-                case 'join':
-                    join(sessionId, message.sdpOffer, message.roomId, ws);
-                    break;
+            case 'incomingCallResponse':
+                incomingCallResponse(sessionId, message.from, message.callResponse, message.sdpOffer, ws);
+                break;
 
-                case 'call':
-                    call(sessionId, message.to, message.from, message.sdpOffer);
-                    break;
+            case 'stop':
+                stop(sessionId);
+                break;
 
-                case 'incomingCallResponse':
-                    incomingCallResponse(sessionId, message.from, message.callResponse, message.sdpOffer, ws);
-                    break;
+            case 'onIceCandidate':
+                onIceCandidate(sessionId, message.candidate);
+                break;
 
-                case 'stop':
-                    stop(sessionId);
-                    break;
-
-                case 'onIceCandidate':
-                    onIceCandidate(sessionId, message.candidate);
-                    break;
-
-                default:
-                    ws.send(JSON.stringify({
-                        id : 'error',
-                        message : 'Invalid message ' + message
-                    }));
-                    break;
-            }
-        });
+            default:
+                ws.send(JSON.stringify({
+                    id : 'error',
+                    message : 'Invalid message ' + message
+                }));
+                break;
+        }
     });
 }
 

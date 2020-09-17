@@ -86,6 +86,13 @@ window.onbeforeunload = function() {
     ws.close();
 }
 
+ws.onopen = function () {
+    sendMessage({
+        id: 'init',
+        value: 'one2one'
+    })
+}
+
 ws.onmessage = function(message) {
     const parsedMessage = JSON.parse(message.data);
     console.info('Received message: ' + message.data);

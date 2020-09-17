@@ -12,64 +12,54 @@ var pipelines = {};
 var candidatesQueue = {};
 var idCounter = 0;
 
-export const one2oneWs = (server) => {
-    // init(
-    //     new ws.Server({
-    //         server,
-    //         path : '/one2one'
-    //     })
-    // )
-}
 
-function init(wss) {
-    wss.on('connection', function(ws) {
-        var sessionId = nextUniqueId();
-        console.log('Connection received with sessionId ' + sessionId);
 
-        ws.on('error', function(error) {
-            console.log('Connection ' + sessionId + ' error');
-            stop(sessionId);
-        });
+export function one2oneWs(ws) {
+    var sessionId = nextUniqueId();
+    console.log('Connection received with sessionId ' + sessionId);
+    ws.on('error', function(error) {
+        console.log('Connection ' + sessionId + ' error');
+        stop(sessionId);
+    });
 
-        ws.on('close', function() {
-            console.log('Connection ' + sessionId + ' closed');
-            stop(sessionId);
-            userRegistry.unregister(sessionId);
-        });
+    ws.on('close', function() {
+        console.log('Connection ' + sessionId + ' closed');
+        stop(sessionId);
+        userRegistry.unregister(sessionId);
+    });
 
-        ws.on('message', function(_message) {
-            var message = JSON.parse(_message);
-            console.log('Connection ' + sessionId + ' received message ', message);
+    ws.on('message', function(_message) {
+        const message = JSON.parse(_message);
+        console.log('Connection ' + sessionId + ' received message ', message);
 
-            switch (message.id) {
-                case 'register':
-                    register(sessionId, message.name, ws);
-                    break;
+        switch (message.id) {
+            case 'register':
+                register(sessionId, message.name, ws);
+                break;
 
-                case 'call':
-                    call(sessionId, message.to, message.from, message.sdpOffer);
-                    break;
+            case 'call':
+                call(sessionId, message.to, message.from, message.sdpOffer);
+                break;
 
-                case 'incomingCallResponse':
-                    incomingCallResponse(sessionId, message.from, message.callResponse, message.sdpOffer, ws);
-                    break;
+            case 'incomingCallResponse':
+                incomingCallResponse(sessionId, message.from, message.callResponse, message.sdpOffer, ws);
+                break;
 
-                case 'stop':
-                    stop(sessionId);
-                    break;
+            case 'stop':
+                stop(sessionId);
+                break;
 
-                case 'onIceCandidate':
-                    onIceCandidate(sessionId, message.candidate);
-                    break;
+            case 'onIceCandidate':
+                onIceCandidate(sessionId, message.candidate);
+                break;
 
-                default:
-                    ws.send(JSON.stringify({
-                        id : 'error',
-                        message : 'Invalid message ' + message
-                    }));
-                    break;
-            }
-        });
+            default:
+                ws.send(JSON.stringify({
+                    id : 'error',
+                    message : 'Invalid message ' + message
+                }));
+                break;
+        }
     });
 }
 
