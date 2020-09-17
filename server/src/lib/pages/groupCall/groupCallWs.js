@@ -3,6 +3,7 @@ import * as ws from 'ws'
 import {CallMediaPipeline} from './CallMediaPipeline'
 import {UserSession} from './UserSession'
 import {UserRegistry} from './UserRegistry'
+import {GroupCallRoom} from 'src/lib/pages/groupCall/GroupCallRoom'
 
 const userRegistry = new UserRegistry();
 const pipelines = {};
@@ -25,7 +26,7 @@ export function groupCallWs(ws) {
         userRegistry.unregister(sessionId);
     });
 
-    ws.on('message', function(_message) {
+    ws.on('message', async function(_message) {
         var message = JSON.parse(_message);
         console.log('Connection ' + sessionId + ' received message ', message);
 
@@ -35,18 +36,10 @@ export function groupCallWs(ws) {
                 break;
 
             case 'createRoom':
-                createRoom(sessionId, message.sdpOffer, ws);
+                await createRoom(sessionId, message.sdpOffer, ws);
                 break;
             case 'join':
                 join(sessionId, message.sdpOffer, message.roomId, ws);
-                break;
-
-            case 'call':
-                call(sessionId, message.to, message.from, message.sdpOffer);
-                break;
-
-            case 'incomingCallResponse':
-                incomingCallResponse(sessionId, message.from, message.callResponse, message.sdpOffer, ws);
                 break;
 
             case 'stop':
@@ -92,107 +85,6 @@ function stop(sessionId) {
     clearCandidatesQueue(sessionId);
 }
 
-function incomingCallResponse(calleeId, from, callResponse, calleeSdp, ws) {
-
-    clearCandidatesQueue(calleeId);
-
-    function onError(callerReason, calleeReason) {
-        if (pipeline) pipeline.release();
-        if (caller) {
-            var callerMessage = {
-                id: 'callResponse',
-                response: 'rejected'
-            }
-            if (callerReason) callerMessage.message = callerReason;
-            caller.sendMessage(callerMessage);
-        }
-
-        var calleeMessage = {
-            id: 'stopCommunication'
-        };
-        if (calleeReason) calleeMessage.message = calleeReason;
-        callee.sendMessage(calleeMessage);
-    }
-
-    var callee = userRegistry.getById(calleeId);
-    if (!from || !userRegistry.getByName(from)) {
-        return onError(null, 'unknown from = ' + from);
-    }
-    var caller = userRegistry.getByName(from);
-
-    if (callResponse === 'accept') {
-        var pipeline = new CallMediaPipeline();
-        pipelines[caller.id] = pipeline;
-        pipelines[callee.id] = pipeline;
-
-        pipeline.createPipeline(caller.id, callee.id, ws, function(error) {
-            if (error) {
-                return onError(error, error);
-            }
-
-            pipeline.generateSdpAnswer(caller.id, caller.sdpOffer, function(error, callerSdpAnswer) {
-                if (error) {
-                    return onError(error, error);
-                }
-
-                pipeline.generateSdpAnswer(callee.id, calleeSdp, function(error, calleeSdpAnswer) {
-                    if (error) {
-                        return onError(error, error);
-                    }
-
-                    var message = {
-                        id: 'startCommunication',
-                        sdpAnswer: calleeSdpAnswer
-                    };
-                    callee.sendMessage(message);
-
-                    message = {
-                        id: 'callResponse',
-                        response : 'accepted',
-                        sdpAnswer: callerSdpAnswer
-                    };
-                    caller.sendMessage(message);
-                });
-            });
-        });
-    } else {
-        var decline = {
-            id: 'callResponse',
-            response: 'rejected',
-            message: 'user declined'
-        };
-        caller.sendMessage(decline);
-    }
-}
-
-function call(callerId, to, from, sdpOffer) {
-    clearCandidatesQueue(callerId);
-
-    var caller = userRegistry.getById(callerId);
-    var rejectCause = 'User ' + to + ' is not registered';
-    if (userRegistry.getByName(to)) {
-        var callee = userRegistry.getByName(to);
-        caller.sdpOffer = sdpOffer
-        callee.peer = from;
-        caller.peer = to;
-        var message = {
-            id: 'incomingCall',
-            from
-        };
-        try{
-            return callee.sendMessage(message);
-        } catch(exception) {
-            rejectCause = "Error " + exception;
-        }
-    }
-    var message  = {
-        id: 'callResponse',
-        response: 'rejected: ',
-        message: rejectCause
-    };
-    caller.sendMessage(message);
-}
-
 function register(id, name, ws, callback) {
     function onError(error) {
         ws.send(JSON.stringify({id:'registerResponse', response : 'rejected ', message: error}));
@@ -214,16 +106,24 @@ function register(id, name, ws, callback) {
     }
 }
 
-function createRoom(id, sdpOffer, ws) {
+async function createRoom(id, sdpOffer, ws) {
     const user = userRegistry.getById(id);
     user.joined = true;
-    rooms.push({
-        id: id + '-' + new Date().getTime(),
-        name: user.name + '-' + id + '-' + new Date().getTime(),
-        sdpOffer,
-        joinList: [{user, sdpOffer}],
-        moderator: id
-    });
+    const roomId = id + '-' + new Date().getTime();
+    const name = user.name + '-' + roomId;
+    const room = new GroupCallRoom(roomId, name);
+    rooms.push(room)
+    await room.addUser(user, sdpOffer);
+
+    if (!pipelines[id]) {
+        pipelines[id] = [];
+    }
+    pipelines[id].push(room);
+    ws.send(JSON.stringify({
+        id: 'createRoomResponse',
+        roomId: rooms.id,
+        name: rooms.name
+    }));
 
     for (const i in userRegistry.usersById) {
         if (userRegistry.usersById[i].joined) {
@@ -232,13 +132,15 @@ function createRoom(id, sdpOffer, ws) {
 
         userRegistry.usersById[i].ws.send(JSON.stringify({
             id: 'newRooms',
-            rooms
+            rooms: rooms.map(item => ({
+                id: item.id,
+                name: item.name
+            }))
         }))
     }
 }
 
 function join(id, sdpOffer, roomId, ws) {
-    const user = userRegistry.getById(id);
     const room = rooms.find(item => item.roomId === roomId);
     if (!room) {
         ws.send(JSON.stringify({
@@ -250,21 +152,6 @@ function join(id, sdpOffer, roomId, ws) {
     ws.send(JSON.stringify({
         id: 'joinResponse',
     }));
-
-    for (const joinInfo of room.joinList) {
-        joinInfo.user.ws.send(JSON.stringify({
-            id: 'newJoin',
-            info: {
-                user,
-                sdpOffer
-            }
-        }))
-    }
-
-    room.joinList.push({
-        user,
-        sdpOffer
-    });
 }
 
 function clearCandidatesQueue(sessionId) {
@@ -277,9 +164,10 @@ function onIceCandidate(sessionId, _candidate) {
     var candidate = kurento.getComplexType('IceCandidate')(_candidate);
     var user = userRegistry.getById(sessionId);
 
-    if (pipelines[user.id] && pipelines[user.id].webRtcEndpoint && pipelines[user.id].webRtcEndpoint[user.id]) {
-        var webRtcEndpoint = pipelines[user.id].webRtcEndpoint[user.id];
-        webRtcEndpoint.addIceCandidate(candidate);
+    if (pipelines[user.id]) {
+        for (const line of pipelines[user.id]) {
+            line.addIceCandidate(user.id, candidate);
+        }
     }
     else {
         if (!candidatesQueue[user.id]) {

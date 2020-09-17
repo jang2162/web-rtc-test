@@ -78,6 +78,8 @@ export class CallMediaPipeline {
                                 }
                             });
 
+
+
                             self.pipeline = pipeline;
                             self.webRtcEndpoint[callerId] = callerWebRtcEndpoint;
                             self.webRtcEndpoint[calleeId] = calleeWebRtcEndpoint;

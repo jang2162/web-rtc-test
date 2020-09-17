@@ -14,10 +14,13 @@ let $chat;
 let $me;
 let $meVideo;
 let $streams;
+let $roomName;
+let streams = [];
 $(function () {
     $step1 = $("#step1");
     $nameInp = $("#nameInp");
     $nameOk = $("#nameOk");
+    $roomName = $("#roomName");
     $step2 = $("#step2").hide();
     $createRoom = $("#createRoom").prop('disabled', true);
     $rooms = $("#rooms");
@@ -95,10 +98,15 @@ ws.onmessage = function(message) {
         case 'registerResponse':
             newRooms(parsedMessage.rooms);
             break;
-        case 'join':
-            console.log(parsedMessage);
+        case 'createRoomResponse':
+            createRoomResponse(parsedMessage);
             break;
-
+        case 'joinResponse':
+            joinResponse(parsedMessage);
+            break;
+        case 'join':
+            join(parsedMessage);
+            break;
         case 'iceCandidate':
             webRtcPeer.addIceCandidate(parsedMessage.candidate)
             break;
@@ -117,6 +125,47 @@ function newRooms(rooms) {
             ])
         )
     }
+}
+
+
+function createRoomResponse(data) {
+    $rooms.hide();
+    $roomName.text(data.name);
+}
+
+function joinResponse(data) {
+    $rooms.hide();
+    $roomName.text(data.name);
+
+    for (const item of data.users) {
+        addStream(item.user, item.sdpAnswer);
+    }
+
+}
+function join(data) {
+    addStream(data.user, data.sdpAnswer);
+}
+
+function addStream(user, sdpAnswer) {
+    const videoEle = document.createElement('video');
+    const peer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
+        if (error) {
+            console.error(error);
+        }
+        webRtcPeer.processAnswer(sdpAnswer);
+    });
+    $streams.append(
+        $("<li/>").append([
+            $("<span/>").text(user.name),
+            videoEle
+        ])
+    )
+    videoEle[0].play();
+    streams.push({
+        peer,
+        user,
+        videoEle
+    });
 }
 
 function onIceCandidate(candidate) {
