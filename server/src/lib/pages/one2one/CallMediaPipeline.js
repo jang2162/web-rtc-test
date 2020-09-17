@@ -1,5 +1,6 @@
 import {candidatesQueue, userRegistry} from './one2one';
 import {getKurentoClient} from '../../getKurentoClient'
+import * as kurento from 'kurento-client';
 
 export class CallMediaPipeline {
     // pipelrsndpoint;

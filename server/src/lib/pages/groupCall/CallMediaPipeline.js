@@ -1,5 +1,6 @@
 import {candidatesQueue, userRegistry} from './groupCallWs';
 import {getKurentoClient} from '../../getKurentoClient';
+import * as kurento from 'kurento-client';
 
 export class CallMediaPipeline {
     // pipeline;
