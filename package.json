@@ -14,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@babel/polyfill": "^7.11.5",
     "express": "^4.17.1",
     "jquery": "^3.5.1",
     "kurento-client": "^6.14.0",
