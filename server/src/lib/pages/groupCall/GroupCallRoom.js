@@ -41,7 +41,7 @@ export class GroupCallRoom {
             roomId: this.id,
             name: this.name,
             sdpAnswer,
-            users: userData.endpoints.map(item => (
+            users: this.userDataList.map(item => (
                 {
                     user: {
                         id: item.user.id,
