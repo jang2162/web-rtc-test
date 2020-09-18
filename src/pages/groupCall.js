@@ -156,7 +156,11 @@ function join(data) {
 
 function addStream(user, sdpAnswer) {
     const videoEle = document.createElement('video');
-    const peer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
+    const options = {
+        remoteVideo: videoEle,
+        onicecandidate : onIceCandidate
+    }
+    const peer = WebRtcPeer.WebRtcPeerRecvonly(options, function(error) {
         if (error) {
             console.error(error);
         }
