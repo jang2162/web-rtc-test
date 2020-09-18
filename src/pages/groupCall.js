@@ -56,7 +56,7 @@ $(function () {
             onicecandidate : onIceCandidate
         }
 
-        webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
+        webRtcPeer = WebRtcPeer.WebRtcPeerSendrecv(options, function(error) {
             if (error) {
                 console.error(error);
             }
@@ -71,6 +71,7 @@ $(function () {
                 $createRoom.prop('disabled', false);
             });
         });
+        $meVideo[0].play();
     });
 
     $createRoom.on('click', function () {
@@ -171,6 +172,7 @@ function addStream(user, sdpAnswer) {
             videoEle
         ])
     )
+    videoEle.play().then();
     streams.push({
         peer,
         user,
