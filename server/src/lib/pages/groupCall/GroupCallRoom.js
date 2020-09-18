@@ -22,7 +22,7 @@ export class GroupCallRoom {
             sdpAnswer,
             webEndPoint,
             sendSdpOffer,
-            endpoints: []
+            endPoints: []
         }
 
         for (const userDataA of this.userDataList) {
@@ -61,7 +61,7 @@ export class GroupCallRoom {
                 const endpoint = await this.createWebRtcEndpoint(userId);
                 const sdpAnswer = await this.generateSdpAnswer(endpoint, sdpOffer);
                 await this.connectWebRtcEndpoint(presenterUserData.webEndPoint, endpoint);
-                userData.endpoints.push({
+                userData.endPoints.push({
                     user: presenterUserData.user,
                     endpoint,
                     sdpAnswer
@@ -185,8 +185,10 @@ export class GroupCallRoom {
         const userData = this.userDataList.find(item => item.user.id == id);
         if (userData) {
             if (key) {
-                const endpoint = userData.endPoints.find(item => item.user.id == key);
-                endpoint.addIceCandidate(candidate);
+                const endpointData = userData.endPoints.find(item => item.user.id == key);
+                if (endpointData) {
+                    endpointData.endpoint.addIceCandidate(candidate);
+                }
             } else {
                 userData.webEndPoint.addIceCandidate(candidate);
             }
