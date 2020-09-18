@@ -168,7 +168,7 @@ function onIceCandidate(sessionId, roomId, key, _candidate) {
     const candidate = kurento.getComplexType('IceCandidate')(_candidate);
     const user = userRegistry.getById(sessionId);
     const room = rooms.find(item => item.id === roomId);
-    if (!room) {
+    if (room) {
         room.addIceCandidate(user.id, key, candidate);
     }
 }
