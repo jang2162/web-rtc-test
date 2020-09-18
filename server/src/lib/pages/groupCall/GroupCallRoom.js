@@ -35,7 +35,7 @@ export class GroupCallRoom {
         }
 
         if (this.userDataList.length > 0) {
-            userData.user.ws.send({
+            userData.user.ws.send(JSON.stringify({
                 id: 'joinResponse',
                 roomId: this.id,
                 name: this.name,
@@ -48,7 +48,7 @@ export class GroupCallRoom {
                         sdpAnswer: item.sdpAnswer
                     }
                 ))
-            })
+            }))
         }
 
         this.userDataList.push(userData);
