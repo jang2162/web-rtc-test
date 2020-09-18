@@ -1,5 +1,5 @@
 import {getKurentoClient} from '../../getKurentoClient'
-import {candidatesQueue, userRegistry} from './groupCallWs'
+import {userRegistry} from './groupCallWs'
 import * as kurento from 'kurento-client';
 
 export class GroupCallRoom {
@@ -8,25 +8,27 @@ export class GroupCallRoom {
         this.name = name;
         this.pipeline = null;
         this.userDataList = [];
+        this.candidatesQueue = {};
     }
 
-    async addUser(user, sdpOffer) {
+    async addUser(user, sendSdpOffer) {
         if (!this.pipeline) {
             this.pipeline = await this.createPipeLine();
         }
-
+        const webEndPoint = await this.createWebRtcEndpoint(user.id);
+        const sdpAnswer = await this.generateSdpAnswer(webEndPoint, sendSdpOffer);
         const userData = {
             user,
-            sdpOffer,
+            sdpAnswer,
+            webEndPoint,
+            sendSdpOffer,
             endpoints: []
         }
 
         for (const userDataA of this.userDataList) {
-            const sdpAnswer = await this.connect(userDataA, userData);
             userDataA.user.ws.send(JSON.stringify({
                 id: 'join',
                 roomId: this.id,
-                sdpAnswer,
                 user: {
                     id: userData.user.id,
                     name: userData.user.name
@@ -34,55 +36,72 @@ export class GroupCallRoom {
             }));
         }
 
-        if (this.userDataList.length > 0) {
-            userData.user.ws.send(JSON.stringify({
-                id: 'joinResponse',
-                roomId: this.id,
-                name: this.name,
-                users: userData.endpoints.map(item => (
-                    {
-                        user: {
-                            id: item.user.id,
-                            name: item.user.name,
-                        },
-                        sdpAnswer: item.sdpAnswer
-                    }
-                ))
-            }))
-        }
-
+        userData.user.ws.send(JSON.stringify({
+            id: 'joinResponse',
+            roomId: this.id,
+            name: this.name,
+            sdpAnswer,
+            users: userData.endpoints.map(item => (
+                {
+                    user: {
+                        id: item.user.id,
+                        name: item.user.name,
+                    },
+                }
+            ))
+        }))
         this.userDataList.push(userData);
     }
 
-
-    connect(userDataA, userDataB) {
+    connect(userId, presenterId, sdpOffer) {
         return new Promise(async (resolve, reject) => {
+            const userData = this.userDataList.find(item => item.user.id == userId);
+            const presenterUserData = this.userDataList.find(item => item.user.id == presenterId);
             try {
-                const webEndPointA = await this.createWebRtcEndpoint(userDataA.user.id);
-                const webEndPointB = await this.createWebRtcEndpoint(userDataB.user.id);
-                await this.connectWebRtcEndpoint(webEndPointA, webEndPointB);
-                await this.connectWebRtcEndpoint(webEndPointB, webEndPointA);
-                const sdpAnswerA = await this.generateSdpAnswer(webEndPointA, userDataA.sdpOffer)
-                const sdpAnswerB = await this.generateSdpAnswer(webEndPointB, userDataB.sdpOffer)
-
-                userDataA.endpoints.push({
-                    user: userDataB.user,
-                    endpoint: webEndPointA,
-                    sdpAnswer: sdpAnswerA
+                const endpoint = await this.createWebRtcEndpoint(userId);
+                const sdpAnswer = await this.generateSdpAnswer(endpoint, sdpOffer);
+                await this.connectWebRtcEndpoint(presenterUserData.webEndPoint, endpoint);
+                userData.endpoints.push({
+                    user: presenterUserData.user,
+                    endpoint,
+                    sdpAnswer
                 });
-
-                userDataB.endpoints.push({
-                    user: userDataA.user,
-                    endpoint: webEndPointB,
-                    sdpAnswer: sdpAnswerB
-                });
-                resolve(sdpAnswerA);
+                resolve(sdpAnswer);
             } catch (e) {
                 reject(e);
                 this.pipeline.release();
             }
-        });
+
+        })
     }
+    // connect(userDataA, userDataB) {
+    //     return new Promise(async (resolve, reject) => {
+    //         try {
+    //             const webEndPointA = await this.createWebRtcEndpoint(userDataA.user.id);
+    //             const webEndPointB = await this.createWebRtcEndpoint(userDataB.user.id);
+    //             await this.connectWebRtcEndpoint(webEndPointA, webEndPointB);
+    //             await this.connectWebRtcEndpoint(webEndPointB, webEndPointA);
+    //             const sdpAnswerA = await this.generateSdpAnswer(webEndPointA, userDataA.sendSdpOffer)
+    //             const sdpAnswerB = await this.generateSdpAnswer(webEndPointB, userDataB.sendSdpOffer)
+    //
+    //             userDataA.endpoints.push({
+    //                 user: userDataB.user,
+    //                 endpoint: webEndPointA,
+    //                 sdpAnswer: sdpAnswerA
+    //             });
+    //
+    //             userDataB.endpoints.push({
+    //                 user: userDataA.user,
+    //                 endpoint: webEndPointB,
+    //                 sdpAnswer: sdpAnswerB
+    //             });
+    //             resolve(sdpAnswerA);
+    //         } catch (e) {
+    //             reject(e);
+    //             this.pipeline.release();
+    //         }
+    //     });
+    // }
 
     connectWebRtcEndpoint(a, b) {
         return new Promise(async (resolve, reject) => {
@@ -128,17 +147,22 @@ export class GroupCallRoom {
         })
     }
 
-    async createWebRtcEndpoint(userId) {
+    async createWebRtcEndpoint(userId, key) {
         return new Promise((resolve, reject) => {
             this.pipeline.create('WebRtcEndpoint', (error, webRtcEndpoint) => {
                 if (error) {
                     return reject(error);
                 }
+                if (this.candidatesQueue[userId]) {
+                    if (!key) {
+                        key = 0;
+                    }
 
-                if (candidatesQueue[userId]) {
-                    while(candidatesQueue[userId].length) {
-                        const candidate = candidatesQueue[userId].shift();
-                        webRtcEndpoint.addIceCandidate(candidate);
+                    if (this.candidatesQueue[userId][key]) {
+                        while(this.candidatesQueue[userId][key].length) {
+                            const candidate = this.candidatesQueue[userId][key].shift();
+                            webRtcEndpoint.addIceCandidate(candidate);
+                        }
                     }
                 }
 
@@ -146,6 +170,8 @@ export class GroupCallRoom {
                     const candidate = kurento.getComplexType('IceCandidate')(event.candidate);
                     userRegistry.getById(userId).ws.send(JSON.stringify({
                         id : 'iceCandidate',
+                        key,
+                        roomId: this.id,
                         candidate : candidate
                     }));
                 });
@@ -155,12 +181,33 @@ export class GroupCallRoom {
         })
     }
 
-    addIceCandidate(id, candidate) {
+    addIceCandidate(id, key, candidate) {
         const userData = this.userDataList.find(item => item.user.id == id);
         if (userData) {
-            for (const point of userData.endPoints) {
-                point.endpoint.addIceCandidate(candidate);
+            if (key) {
+                const endpoint = userData.endPoints.find(item => item.user.id == key);
+                endpoint.addIceCandidate(candidate);
+            } else {
+                userData.webEndPoint.addIceCandidate(candidate);
             }
+        } else {
+            if (!this.candidatesQueue[id]) {
+                this.candidatesQueue[id] = {};
+            }
+
+            if (!key) {
+                key = 0;
+            }
+            if (!this.candidatesQueue[id][key]) {
+                this.candidatesQueue[id][key] = [];
+            }
+            this.candidatesQueue[id][key].push(candidate);
+        }
+    }
+
+    clearCandidatesQueue(sessionId) {
+        if (this.candidatesQueue[sessionId]) {
+            delete this.candidatesQueue[sessionId];
         }
     }
 }

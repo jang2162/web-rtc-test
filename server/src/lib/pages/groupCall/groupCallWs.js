@@ -4,9 +4,7 @@ import {UserRegistry} from './UserRegistry'
 import {GroupCallRoom} from './GroupCallRoom'
 
 const userRegistry = new UserRegistry();
-const pipelines = {};
 const rooms = [];
-const candidatesQueue = {};
 let idCounter = 0;
 
 export function groupCallWs(ws) {
@@ -39,13 +37,15 @@ export function groupCallWs(ws) {
             case 'join':
                 await join(sessionId, message.sdpOffer, message.roomId, ws);
                 break;
-
+            case 'connect':
+                await connect(sessionId, message.sdpOffer, message.roomId, message.userId, ws);
+                break;
             case 'stop':
                 stop(sessionId);
                 break;
 
             case 'onIceCandidate':
-                onIceCandidate(sessionId, message.candidate);
+                onIceCandidate(sessionId, message.roomId, message.key, message.candidate);
                 break;
 
             default:
@@ -59,28 +59,30 @@ export function groupCallWs(ws) {
 }
 
 function stop(sessionId) {
-    if (!pipelines[sessionId]) {
-        return;
+    // if (!pipelines[sessionId]) {
+    //     return;
+    // }
+    //
+    // var pipeline = pipelines[sessionId];
+    // delete pipelines[sessionId];
+    // pipeline.release();
+    // var stopperUser = userRegistry.getById(sessionId);
+    // var stoppedUser = userRegistry.getByName(stopperUser.peer);
+    // stopperUser.peer = null;
+    //
+    // if (stoppedUser) {
+    //     stoppedUser.peer = null;
+    //     delete pipelines[stoppedUser.id];
+    //     var message = {
+    //         id: 'stopCommunication',
+    //         message: 'remote user hanged out'
+    //     }
+    //     stoppedUser.sendMessage(message)
+    // }
+    const user = userRegistry.getById(sessionId);
+    for (const room of user.rooms) {
+        room.clearCandidatesQueue(sessionId);
     }
-
-    var pipeline = pipelines[sessionId];
-    delete pipelines[sessionId];
-    pipeline.release();
-    var stopperUser = userRegistry.getById(sessionId);
-    var stoppedUser = userRegistry.getByName(stopperUser.peer);
-    stopperUser.peer = null;
-
-    if (stoppedUser) {
-        stoppedUser.peer = null;
-        delete pipelines[stoppedUser.id];
-        var message = {
-            id: 'stopCommunication',
-            message: 'remote user hanged out'
-        }
-        stoppedUser.sendMessage(message)
-    }
-
-    clearCandidatesQueue(sessionId);
 }
 
 function register(id, name, ws, callback) {
@@ -112,16 +114,7 @@ async function createRoom(id, sdpOffer, ws) {
     const room = new GroupCallRoom(roomId, name);
     rooms.push(room)
     await room.addUser(user, sdpOffer);
-
-    if (!pipelines[id]) {
-        pipelines[id] = [];
-    }
-    pipelines[id].push(room);
-    ws.send(JSON.stringify({
-        id: 'createRoomResponse',
-        roomId: room.id,
-        name: room.name
-    }));
+    user.rooms.push(room);
 
     for (const i in userRegistry.usersById) {
         if (userRegistry.usersById[i].joined) {
@@ -150,28 +143,33 @@ async function join(id, sdpOffer, roomId, ws) {
     const user = userRegistry.getById(id);
     user.joined = true;
     await room.addUser(user, sdpOffer);
+    user.rooms.push(room);
 }
 
-function clearCandidatesQueue(sessionId) {
-    if (candidatesQueue[sessionId]) {
-        delete candidatesQueue[sessionId];
+async function connect(id, sdpOffer, roomId, userId, ws) {
+    const room = rooms.find(item => item.id === roomId);
+    if (!room) {
+        ws.send(JSON.stringify({
+            id: 'connectResponse',
+            error: 'roomNotFound'
+        }));
     }
+
+    const sdpAnswer = await room.connect(id, userId, sdpOffer);
+    ws.send(JSON.stringify({
+        id: 'connectResponse',
+        roomId,
+        userId,
+        sdpAnswer
+    }));
 }
 
-function onIceCandidate(sessionId, _candidate) {
-    var candidate = kurento.getComplexType('IceCandidate')(_candidate);
-    var user = userRegistry.getById(sessionId);
-
-    if (pipelines[user.id]) {
-        for (const line of pipelines[user.id]) {
-            line.addIceCandidate(user.id, candidate);
-        }
-    }
-    else {
-        if (!candidatesQueue[user.id]) {
-            candidatesQueue[user.id] = [];
-        }
-        candidatesQueue[sessionId].push(candidate);
+function onIceCandidate(sessionId, roomId, key, _candidate) {
+    const candidate = kurento.getComplexType('IceCandidate')(_candidate);
+    const user = userRegistry.getById(sessionId);
+    const room = rooms.find(item => item.id === roomId);
+    if (!room) {
+        room.addIceCandidate(user.id, key, candidate);
     }
 }
 
@@ -181,7 +179,6 @@ function nextUniqueId() {
 }
 
 export {
-    candidatesQueue,
     userRegistry
 }
 

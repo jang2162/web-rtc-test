@@ -24,6 +24,7 @@ let $meVideo;
 let $streams;
 let $roomName;
 let streams = [];
+let roomId;
 $(function () {
     $step1 = $("#step1");
     $nameInp = $("#nameInp");
@@ -53,10 +54,10 @@ $(function () {
         $me.find('span').text(name);
         const options = {
             localVideo : $meVideo[0],
-            onicecandidate : onIceCandidate
+            onicecandidate: onIceCandidate
         }
 
-        webRtcPeer = WebRtcPeer.WebRtcPeerSendrecv(options, function(error) {
+        webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
             if (error) {
                 console.error(error);
             }
@@ -83,7 +84,7 @@ $(function () {
     });
 
     $rooms.on('click', 'li>button', function () {
-        const roomId = $(this).data('room-id');
+        roomId = $(this).data('room-id');
         sendMessage({
             id : 'join',
             sdpOffer,
@@ -106,17 +107,24 @@ ws.onmessage = function(message) {
         case 'registerResponse':
             newRooms(parsedMessage.rooms);
             break;
-        case 'createRoomResponse':
-            createRoomResponse(parsedMessage);
-            break;
         case 'joinResponse':
             joinResponse(parsedMessage);
             break;
         case 'join':
             join(parsedMessage);
             break;
+        case 'connectResponse':
+            connectResponse(parsedMessage);
+            break;
         case 'iceCandidate':
-            webRtcPeer.addIceCandidate(parsedMessage.candidate)
+            if (parsedMessage.key) {
+                const stream = streams.find(item => item.user.id == parsedMessage.key);
+                if (stream) {
+                    stream.peer.addIceCandidate(parsedMessage.candidate);
+                }
+            } else {
+                webRtcPeer.addIceCandidate(parsedMessage.candidate);
+            }
             break;
         default:
             console.error('Unrecognized message', parsedMessage);
@@ -135,55 +143,73 @@ function newRooms(rooms) {
     }
 }
 
-
-function createRoomResponse(data) {
-    $rooms.hide();
-    $roomName.text(data.name);
-}
-
 function joinResponse(data) {
     $rooms.hide();
     $roomName.text(data.name);
-
+    roomId = data.roomId;
+    webRtcPeer.processAnswer(data.sdpAnswer);
     for (const item of data.users) {
         addStream(item.user, item.sdpAnswer);
     }
-
 }
+
+function connectResponse(data) {
+    const stream = streams.find(item => item.user.id == data.userId);
+    if (stream) {
+        stream.peer.processAnswer(data.sdpAnswer);
+    }
+}
+
 function join(data) {
-    addStream(data.user, data.sdpAnswer);
+    addStream(data.user);
 }
 
-function addStream(user, sdpAnswer) {
+function addStream(user) {
     const videoEle = document.createElement('video');
     const options = {
         remoteVideo: videoEle,
-        onicecandidate : onIceCandidate
+        onicecandidate : (candidate) => {
+            onIceCandidate(candidate, user.id);
+        }
     }
     const peer = WebRtcPeer.WebRtcPeerRecvonly(options, function(error) {
         if (error) {
             console.error(error);
         }
-        webRtcPeer.processAnswer(sdpAnswer);
+        this.generateOffer((error, sdpOffer) => {
+            if (error) {
+                console.error(error);
+            }
+            streams.push({
+                peer,
+                user,
+                sdpOffer,
+                videoEle
+            });
+
+            sendMessage({
+                id : 'connect',
+                userId: user.id,
+                roomId,
+                sdpOffer
+            });
+        });
     });
     $streams.append(
         $("<li/>").append([
             $("<span/>").text(user.name),
             videoEle
         ])
-    )
-    videoEle.play().then();
-    streams.push({
-        peer,
-        user,
-        videoEle
-    });
+    );
+
 }
 
-function onIceCandidate(candidate) {
+function onIceCandidate(candidate, key) {
     console.log('Local candidate' + JSON.stringify(candidate));
     sendMessage({
         id : 'onIceCandidate',
+        roomId,
+        key,
         candidate : candidate
     });
 }

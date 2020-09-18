@@ -10,6 +10,7 @@ export class UserSession {
         this.ws = ws;
         this.peer = null;
         this.sdpOffer = null;
+        this.rooms = [];
     }
 
     sendMessage(message) {
