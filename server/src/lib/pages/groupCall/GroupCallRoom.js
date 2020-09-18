@@ -1,5 +1,6 @@
 import {getKurentoClient} from '../../getKurentoClient'
 import {candidatesQueue, userRegistry} from './groupCallWs'
+import * as kurento from 'kurento-client';
 
 export class GroupCallRoom {
     constructor(id, name) {
