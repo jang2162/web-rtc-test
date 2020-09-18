@@ -139,7 +139,7 @@ async function createRoom(id, sdpOffer, ws) {
 }
 
 function join(id, sdpOffer, roomId, ws) {
-    const room = rooms.find(item => item.roomId === roomId);
+    const room = rooms.find(item => item.id === roomId);
     if (!room) {
         ws.send(JSON.stringify({
             id: 'joinResponse',
