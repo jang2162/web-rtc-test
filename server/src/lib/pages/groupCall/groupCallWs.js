@@ -80,13 +80,17 @@ function stop(sessionId) {
     //     stoppedUser.sendMessage(message)
     // }
     const user = userRegistry.getById(sessionId);
-    for (const room of user.rooms) {
-        room.clearCandidatesQueue(sessionId);
+    if (user) {
+        for (const room of user.rooms) {
+            room.clearCandidatesQueue(sessionId);
+        }
     }
+
 }
 
 function register(id, name, ws, callback) {
     function onError(error) {
+        console.error(error);
         ws.send(JSON.stringify({id:'registerResponse', response : 'rejected ', message: error}));
     }
 
@@ -100,7 +104,11 @@ function register(id, name, ws, callback) {
 
     userRegistry.register(new UserSession(id, name, ws));
     try {
-        ws.send(JSON.stringify({id: 'registerResponse', response: 'accepted', rooms}));
+        ws.send(JSON.stringify({
+            id: 'registerResponse',
+            response: 'accepted',
+            rooms: rooms.map(({id, name}) => ({id, name}))
+        }));
     } catch(exception) {
         onError(exception);
     }
@@ -123,10 +131,7 @@ async function createRoom(id, sdpOffer, ws) {
 
         userRegistry.usersById[i].ws.send(JSON.stringify({
             id: 'newRooms',
-            rooms: rooms.map(item => ({
-                id: item.id,
-                name: item.name
-            }))
+            rooms: rooms.map(({id, name}) => ({id, name}))
         }))
     }
 }
