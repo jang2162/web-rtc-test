@@ -37,7 +37,7 @@ export function groupCallWs(ws) {
                 await createRoom(sessionId, message.sdpOffer, ws);
                 break;
             case 'join':
-                join(sessionId, message.sdpOffer, message.roomId, ws);
+                await join(sessionId, message.sdpOffer, message.roomId, ws);
                 break;
 
             case 'stop':
@@ -138,18 +138,18 @@ async function createRoom(id, sdpOffer, ws) {
     }
 }
 
-function join(id, sdpOffer, roomId, ws) {
+async function join(id, sdpOffer, roomId, ws) {
     const room = rooms.find(item => item.id === roomId);
     if (!room) {
+
         ws.send(JSON.stringify({
             id: 'joinResponse',
             error: 'roomNotFound'
         }));
     }
-
-    ws.send(JSON.stringify({
-        id: 'joinResponse',
-    }));
+    const user = userRegistry.getById(id);
+    user.joined = true;
+    await room.addUser(user, sdpOffer);
 }
 
 function clearCandidatesQueue(sessionId) {
