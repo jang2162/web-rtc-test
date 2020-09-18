@@ -71,7 +71,6 @@ $(function () {
                 $createRoom.prop('disabled', false);
             });
         });
-        $meVideo[0].play();
     });
 
     $createRoom.on('click', function () {
@@ -172,7 +171,6 @@ function addStream(user, sdpAnswer) {
             videoEle
         ])
     )
-    videoEle[0].play();
     streams.push({
         peer,
         user,
