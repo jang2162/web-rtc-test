@@ -119,8 +119,8 @@ async function createRoom(id, sdpOffer, ws) {
     pipelines[id].push(room);
     ws.send(JSON.stringify({
         id: 'createRoomResponse',
-        roomId: rooms.id,
-        name: rooms.name
+        roomId: room.id,
+        name: room.name
     }));
 
     for (const i in userRegistry.usersById) {
