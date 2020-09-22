@@ -7,7 +7,7 @@ import {createServer} from 'https';
 import {one2oneWs} from './src/lib/pages/one2one/one2one';
 import {groupCallWs} from './src/lib/pages/groupCall/groupCallWs';
 import * as ws from 'ws'
-import {one2manyWs} from 'src/lib/pages/one2many/one2manyWs'
+import {one2manyWs} from './src/lib/pages/one2many/one2manyWs'
 
 var options =
     {
