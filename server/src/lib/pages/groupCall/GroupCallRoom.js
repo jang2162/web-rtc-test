@@ -61,6 +61,7 @@ export class GroupCallRoom {
         return new Promise(async (resolve, reject) => {
             const userData = this.userDataList.find(item => item.user.id == userId);
             const presenterUserData = this.userDataList.find(item => item.user.id == presenterId);
+            console.log('connect ' + userData.user.id, '  ' + presenterUserData.user.id);
             try {
                 const endpoint = await this.createWebRtcEndpoint(userId, presenterId);
                 const sdpAnswer = await this.generateSdpAnswer(endpoint, sdpOffer);
@@ -148,7 +149,7 @@ export class GroupCallRoom {
 
                 webRtcEndpoint.on('OnIceCandidate', (event) => {
                     const candidate = kurento.getComplexType('IceCandidate')(event.candidate);
-                    console.log('\t on ice candidatesQueue ' + userId + '  ' + key + '  ' + candidate);
+                    // console.log('\t on ice candidatesQueue ' + userId + '  ' + key + '  ' + candidate);
                     userRegistry.getById(userId).ws.send(JSON.stringify({
                         id : 'iceCandidate',
                         key,

@@ -105,11 +105,11 @@ ws.onmessage = function(message) {
             if (parsedMessage.key) {
                 const stream = streams.find(item => item.user.id == parsedMessage.key);
                 if (stream) {
-                    console.log('iceCandidate ' + parsedMessage.key + ' ' + JSON.stringify(parsedMessage.candidate));
+                    // console.log('iceCandidate ' + parsedMessage.key + ' ' + JSON.stringify(parsedMessage.candidate));
                     stream.peer.addIceCandidate(parsedMessage.candidate);
                 }
             } else {
-                console.log('iceCandidate [NULL]' + JSON.stringify(parsedMessage.candidate));
+                // console.log('iceCandidate [NULL]' + JSON.stringify(parsedMessage.candidate));
                 webRtcPeer.addIceCandidate(parsedMessage.candidate);
             }
             break;
