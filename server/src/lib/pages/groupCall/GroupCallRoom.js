@@ -166,6 +166,7 @@ export class GroupCallRoom {
     addIceCandidate(id, key, candidate) {
         const userData = this.userDataList.find(item => item.user.id == id);
         if (userData) {
+            console.log('addIceCandidate' +"  "+ id +"  "+ key +"  "+ candidate);
             if (key) {
                 const endpointData = userData.endPoints.find(item => item.user.id == key);
                 if (endpointData) {
@@ -175,6 +176,7 @@ export class GroupCallRoom {
                 userData.webEndPoint.addIceCandidate(candidate);
             }
         } else {
+            console.log('addIceCandidateQueue' +"  "+ id +"  "+ key +"  "+ candidate);
             if (!this.candidatesQueue[id]) {
                 this.candidatesQueue[id] = {};
             }
