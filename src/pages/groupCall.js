@@ -67,6 +67,8 @@ $(function () {
 
     $rooms.on('click', 'li>button', function () {
         roomId = $(this).data('room-id');
+        const roomName = $(this).data('room-name');
+        $roomName.text(roomName);
         roomEnter();
     })
 })
@@ -88,7 +90,7 @@ ws.onmessage = function(message) {
             newRooms(parsedMessage.rooms);
             break;
         case 'createRoomResponse':
-            createRoomResponse(parsedMessage.roomId);
+            createRoomResponse(parsedMessage);
             break;
         case 'roomEnterResponse':
             roomEnterResponse(parsedMessage);
@@ -116,8 +118,9 @@ ws.onmessage = function(message) {
     }
 }
 
-function createRoomResponse(newRoomId) {
-    roomId = newRoomId;
+function createRoomResponse(data) {
+    roomId = data.roomId;
+    $roomName.text(data.roomName);
     roomEnter();
 }
 
@@ -141,7 +144,7 @@ function createSendOnlyPeer(cb) {
         onicecandidate: onIceCandidate
     }
 
-    webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
+    webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {createRoom
         if (error) {
             return cb(error);
         }
@@ -163,7 +166,7 @@ function newRooms(rooms) {
         $rooms.append(
             $("<li/>").append([
                 $("<span/>").html(room.name),
-                $("<button/>").text('join').data('room-id', room.id)
+                $("<button/>").text('join').data('room-id', room.id).data('room-name', room.name)
             ])
         )
     }
@@ -172,8 +175,6 @@ function newRooms(rooms) {
 function roomEnterResponse(data) {
     console.log('4.3. roomEnterResponse ' + data.sdpAnswer);
     $rooms.hide();
-    $roomName.text(data.name);
-    roomId = data.roomId;
     webRtcPeer.processAnswer(data.sdpAnswer);
     for (const item of data.users) {
         addStream(item.user);

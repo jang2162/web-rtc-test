@@ -117,13 +117,14 @@ async function createRoom(id, ws) {
     const user = userRegistry.getById(id);
     user.joined = true;
     const roomId = id + '-' + new Date().getTime();
-    const name = user.name + '-' + roomId;
-    const room = new GroupCallRoom(roomId, name);
+    const roomName = user.name + '-' + roomId;
+    const room = new GroupCallRoom(roomId, roomName);
     rooms.push(room)
     await room.createRoom(user);
     ws.send(JSON.stringify({
         id: 'createRoomResponse',
-        roomId
+        roomId,
+        roomName
     }));
 
 }

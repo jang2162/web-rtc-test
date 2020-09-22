@@ -43,8 +43,6 @@ export class GroupCallRoom {
         console.log('4.3. join response ' + sdpAnswer);
         userData.user.ws.send(JSON.stringify({
             id: 'roomEnterResponse',
-            roomId: this.id,
-            name: this.name,
             sdpAnswer,
             users: this.userDataList.map(item => (
                 {
@@ -134,7 +132,6 @@ export class GroupCallRoom {
                     return reject(error);
                 }
 
-                console.log('\t shift candidatesQueue ' + userId + '  ' + key);
                 if (this.candidatesQueue[userId]) {
                     if (!key) {
                         key = 0;
@@ -149,7 +146,7 @@ export class GroupCallRoom {
                     }
                 }
 
-                webRtcEndpoint.on('OnIceCandidate', function(event) {
+                webRtcEndpoint.on('OnIceCandidate', (event) => {
                     const candidate = kurento.getComplexType('IceCandidate')(event.candidate);
                     console.log('\t on ice candidatesQueue ' + userId + '  ' + key + '  ' + candidate);
                     userRegistry.getById(userId).ws.send(JSON.stringify({
@@ -160,7 +157,6 @@ export class GroupCallRoom {
                     }));
                 });
                 resolve(webRtcEndpoint);
-
             });
         })
     }

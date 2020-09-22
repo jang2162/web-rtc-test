@@ -168,7 +168,6 @@ function getKurentoClient(callback) {
 }
 
 function startPresenter(sessionId, ws, sdpOffer, callback) {
-    clearCandidatesQueue(sessionId);
 
     if (presenter !== null) {
         stop(sessionId);
@@ -258,7 +257,6 @@ function startPresenter(sessionId, ws, sdpOffer, callback) {
 }
 
 function startViewer(sessionId, ws, sdpOffer, callback) {
-    clearCandidatesQueue(sessionId);
 
     if (presenter === null) {
         stop(sessionId);
@@ -327,12 +325,6 @@ function startViewer(sessionId, ws, sdpOffer, callback) {
     });
 }
 
-function clearCandidatesQueue(sessionId) {
-    if (candidatesQueue[sessionId]) {
-        delete candidatesQueue[sessionId];
-    }
-}
-
 function stop(sessionId) {
     if (presenter !== null && presenter.id == sessionId) {
         for (var i in viewers) {
@@ -351,8 +343,6 @@ function stop(sessionId) {
         viewers[sessionId].webRtcEndpoint.release();
         delete viewers[sessionId];
     }
-
-    clearCandidatesQueue(sessionId);
 
     if (viewers.length < 1 && !presenter) {
         console.log('Closing kurento client');
