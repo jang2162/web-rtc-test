@@ -5,6 +5,7 @@ export class UserRegistry {
     constructor() {
         this.usersById = {};
         this.usersByName = {};
+        this.usersByName = {};
     }
 
     register(user) {

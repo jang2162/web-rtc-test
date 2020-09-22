@@ -11,11 +11,12 @@ export class GroupCallRoom {
         this.candidatesQueue = {};
     }
 
+    async createRoom() {
+        this.pipeline = await this.createPipeLine();
+    }
+
     async addUser(user, sendSdpOffer) {
         console.log('4. AddUser');
-        if (!this.pipeline) {
-            this.pipeline = await this.createPipeLine();
-        }
         console.log('4.1. CreateWebRtcEndpoint');
         const webEndPoint = await this.createWebRtcEndpoint(user.id);
         console.log('4.2. GenerateSendSdpAnswer');
@@ -41,7 +42,7 @@ export class GroupCallRoom {
 
         console.log('4.3. join response ' + sdpAnswer);
         userData.user.ws.send(JSON.stringify({
-            id: 'joinResponse',
+            id: 'roomEnterResponse',
             roomId: this.id,
             name: this.name,
             sdpAnswer,
@@ -55,6 +56,7 @@ export class GroupCallRoom {
             ))
         }))
         this.userDataList.push(userData);
+        return this.userDataList.length === 1;
     }
 
     connect(userId, presenterId, sdpOffer) {

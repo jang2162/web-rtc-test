@@ -51,30 +51,10 @@ $(function () {
             id: 'register',
             name
         });
+
         $step1.hide();
         $step2.show();
         $me.find('span').text(name);
-        const options = {
-            localVideo : $meVideo[0],
-            onicecandidate: onIceCandidate
-        }
-
-        webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
-            if (error) {
-                console.error(error);
-            }
-
-            this.generateOffer(function(error, offerSdp) {
-                if (error) {
-                    console.error(error);
-                    alert(error);
-                    return;
-                }
-                sdpOffer = offerSdp;
-                $createRoom.prop('disabled', false);
-            });
-        });
-        $meVideo[0].play();
     });
 
     $createRoom.on('click', function () {
@@ -88,12 +68,7 @@ $(function () {
 
     $rooms.on('click', 'li>button', function () {
         roomId = $(this).data('room-id');
-        console.log('3. Join ' + roomId);
-        sendMessage({
-            id : 'roomEnter',
-            sdpOffer,
-            roomId
-        });
+        roomEnter();
     })
 })
 
@@ -113,8 +88,11 @@ ws.onmessage = function(message) {
             console.log('2. Register Response');
             newRooms(parsedMessage.rooms);
             break;
-        case 'joinResponse':
-            joinResponse(parsedMessage);
+        case 'createRoomResponse':
+            createRoomResponse(parsedMessage.roomId);
+            break;
+        case 'roomEnterResponse':
+            roomEnterResponse(parsedMessage);
             break;
         case 'join':
             join(parsedMessage);
@@ -139,6 +117,48 @@ ws.onmessage = function(message) {
     }
 }
 
+function createRoomResponse(newRoomId) {
+    roomId = newRoomId;
+    roomEnter();
+}
+
+function roomEnter() {
+    console.log('3. roomEnter ' + roomId);
+    createSendOnlyPeer( err => {
+        if (err) {
+            return console.error(err);
+        }
+        sendMessage({
+            id : 'roomEnter',
+            sdpOffer,
+            roomId
+        });
+    });
+}
+
+function createSendOnlyPeer(cb) {
+    const options = {
+        localVideo : $meVideo[0],
+        onicecandidate: onIceCandidate
+    }
+
+    webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
+        if (error) {
+            return cb(error);
+        }
+
+        this.generateOffer(function(error, offerSdp) {
+            if (error) {
+                return cb(error);
+            }
+            sdpOffer = offerSdp;
+            $createRoom.prop('disabled', false);
+            cb(null);
+        });
+    });
+    $meVideo[0].play();
+}
+
 function newRooms(rooms) {
     $rooms.html("");
     for (const room of rooms) {
@@ -151,8 +171,8 @@ function newRooms(rooms) {
     }
 }
 
-function joinResponse(data) {
-    console.log('4.3. join response ' + data.sdpAnswer);
+function roomEnterResponse(data) {
+    console.log('4.3. roomEnterResponse ' + data.sdpAnswer);
     $rooms.hide();
     $roomName.text(data.name);
     roomId = data.roomId;

@@ -112,33 +112,25 @@ function register(id, name, ws, callback) {
     }
 }
 
-async function createRoom(id, sdpOffer, ws) {
-    console.log('3. CreateRoom {{{' + sdpOffer + '}}}');
+async function createRoom(id, ws) {
+    console.log('3. CreateRoom');
     const user = userRegistry.getById(id);
     user.joined = true;
     const roomId = id + '-' + new Date().getTime();
     const name = user.name + '-' + roomId;
     const room = new GroupCallRoom(roomId, name);
     rooms.push(room)
-    await room.addUser(user, sdpOffer);
-    user.rooms.push(room);
+    await room.createRoom(user);
+    ws.send(JSON.stringify({
+        id: 'createRoomResponse',
+        roomId
+    }));
 
-    for (const i in userRegistry.usersById) {
-        if (userRegistry.usersById[i].joined) {
-            continue;
-        }
-
-        userRegistry.usersById[i].ws.send(JSON.stringify({
-            id: 'newRooms',
-            rooms: rooms.map(({id, name}) => ({id, name}))
-        }))
-    }
 }
 
 async function roomEnter(id, sdpOffer, roomId, ws) {
     const room = rooms.find(item => item.id === roomId);
     if (!room) {
-
         ws.send(JSON.stringify({
             id: 'joinResponse',
             error: 'roomNotFound'
@@ -146,7 +138,18 @@ async function roomEnter(id, sdpOffer, roomId, ws) {
     }
     const user = userRegistry.getById(id);
     user.joined = true;
-    await room.addUser(user, sdpOffer);
+    const isFirstMember = await room.addUser(user, sdpOffer);
+    if (isFirstMember) {
+        for (const i in userRegistry.usersById) {
+            if (userRegistry.usersById[i].joined) {
+                continue;
+            }
+            userRegistry.usersById[i].ws.send(JSON.stringify({
+                id: 'newRooms',
+                rooms: rooms.map(({id, name}) => ({id, name}))
+            }));
+        }
+    }
     user.rooms.push(room);
 }
 
