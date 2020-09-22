@@ -51,7 +51,7 @@ $(function () {
             id: 'register',
             name
         });
-
+        $createRoom.prop('disabled', false);
         $step1.hide();
         $step2.show();
         $me.find('span').text(name);
@@ -142,7 +142,7 @@ function createSendOnlyPeer(cb) {
         onicecandidate: onIceCandidate
     }
 
-    webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
+    webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {createRoom
         if (error) {
             return cb(error);
         }
@@ -152,7 +152,6 @@ function createSendOnlyPeer(cb) {
                 return cb(error);
             }
             sdpOffer = offerSdp;
-            $createRoom.prop('disabled', false);
             cb(null);
         });
     });
