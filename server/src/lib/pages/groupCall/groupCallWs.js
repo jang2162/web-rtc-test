@@ -31,7 +31,7 @@ export function groupCallWs(ws) {
                 break;
 
             case 'createRoom':
-                await createRoom(sessionId, message.sdpOffer, ws);
+                await createRoom(sessionId, ws);
                 break;
             case 'roomEnter':
                 await roomEnter(sessionId, message.sdpOffer, message.roomId, ws);

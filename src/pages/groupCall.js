@@ -60,8 +60,7 @@ $(function () {
     $createRoom.on('click', function () {
         console.log('3. CreateRoom ' + sdpOffer);
         sendMessage({
-            id : 'createRoom',
-            sdpOffer
+            id : 'createRoom'
         });
         $(this).remove();
     });
