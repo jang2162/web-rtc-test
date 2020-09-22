@@ -113,7 +113,7 @@ function register(id, name, ws, callback) {
 }
 
 async function createRoom(id, sdpOffer, ws) {
-    console.log('3. CreateRoom' + sdpOffer);
+    console.log('3. CreateRoom {{{' + sdpOffer + '}}}');
     const user = userRegistry.getById(id);
     user.joined = true;
     const roomId = id + '-' + new Date().getTime();

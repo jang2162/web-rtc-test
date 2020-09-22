@@ -12,7 +12,7 @@ export class GroupCallRoom {
     }
 
     async addUser(user, sendSdpOffer) {
-        console.log('4. AddUser' + sendSdpOffer);
+        console.log('4. AddUser');
         if (!this.pipeline) {
             this.pipeline = await this.createPipeLine();
         }
@@ -62,7 +62,7 @@ export class GroupCallRoom {
             const userData = this.userDataList.find(item => item.user.id == userId);
             const presenterUserData = this.userDataList.find(item => item.user.id == presenterId);
             try {
-                const endpoint = await this.createWebRtcEndpoint(userId);
+                const endpoint = await this.createWebRtcEndpoint(userId, presenterId);
                 const sdpAnswer = await this.generateSdpAnswer(endpoint, sdpOffer);
                 await this.connectWebRtcEndpoint(presenterUserData.webEndPoint, endpoint);
                 userData.endPoints.push({
