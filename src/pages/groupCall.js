@@ -144,7 +144,7 @@ function createSendOnlyPeer(cb) {
         onicecandidate: onIceCandidate
     }
 
-    webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {createRoom
+    webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
         if (error) {
             return cb(error);
         }
