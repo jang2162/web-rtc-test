@@ -86,7 +86,7 @@ function stop(sessionId) {
 
 }
 
-function register(id, name, ws, callback) {
+function register(id, name, ws) {
     function onError(error) {
         console.error(error);
         ws.send(JSON.stringify({id:'registerResponse', response : 'rejected ', message: error}));
