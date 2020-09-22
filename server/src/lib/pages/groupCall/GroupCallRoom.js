@@ -12,10 +12,13 @@ export class GroupCallRoom {
     }
 
     async addUser(user, sendSdpOffer) {
+        console.log('4. AddUser' + sendSdpOffer);
         if (!this.pipeline) {
             this.pipeline = await this.createPipeLine();
         }
+        console.log('4.1. CreateWebRtcEndpoint');
         const webEndPoint = await this.createWebRtcEndpoint(user.id);
+        console.log('4.2. GenerateSendSdpAnswer');
         const sdpAnswer = await this.generateSdpAnswer(webEndPoint, sendSdpOffer);
         const userData = {
             user,
@@ -26,16 +29,17 @@ export class GroupCallRoom {
         }
 
         for (const userDataA of this.userDataList) {
-            userDataA.user.ws.send(JSON.stringify({
-                id: 'join',
-                roomId: this.id,
-                user: {
-                    id: userData.user.id,
-                    name: userData.user.name
-                }
-            }));
+            // userDataA.user.ws.send(JSON.stringify({
+            //     id: 'join',
+            //     roomId: this.id,
+            //     user: {
+            //         id: userData.user.id,
+            //         name: userData.user.name
+            //     }
+            // }));
         }
 
+        console.log('4.3. join response ' + sdpAnswer);
         userData.user.ws.send(JSON.stringify({
             id: 'joinResponse',
             roomId: this.id,
@@ -74,34 +78,6 @@ export class GroupCallRoom {
 
         })
     }
-    // connect(userDataA, userDataB) {
-    //     return new Promise(async (resolve, reject) => {
-    //         try {
-    //             const webEndPointA = await this.createWebRtcEndpoint(userDataA.user.id);
-    //             const webEndPointB = await this.createWebRtcEndpoint(userDataB.user.id);
-    //             await this.connectWebRtcEndpoint(webEndPointA, webEndPointB);
-    //             await this.connectWebRtcEndpoint(webEndPointB, webEndPointA);
-    //             const sdpAnswerA = await this.generateSdpAnswer(webEndPointA, userDataA.sendSdpOffer)
-    //             const sdpAnswerB = await this.generateSdpAnswer(webEndPointB, userDataB.sendSdpOffer)
-    //
-    //             userDataA.endpoints.push({
-    //                 user: userDataB.user,
-    //                 endpoint: webEndPointA,
-    //                 sdpAnswer: sdpAnswerA
-    //             });
-    //
-    //             userDataB.endpoints.push({
-    //                 user: userDataA.user,
-    //                 endpoint: webEndPointB,
-    //                 sdpAnswer: sdpAnswerB
-    //             });
-    //             resolve(sdpAnswerA);
-    //         } catch (e) {
-    //             reject(e);
-    //             this.pipeline.release();
-    //         }
-    //     });
-    // }
 
     connectWebRtcEndpoint(a, b) {
         return new Promise(async (resolve, reject) => {
@@ -131,6 +107,7 @@ export class GroupCallRoom {
     }
 
     createPipeLine() {
+        console.log('4.0. CreatePipeLine');
         return new Promise((resolve, reject) => {
             getKurentoClient(function(error, kurentoClient) {
                 if (error) {
@@ -148,11 +125,14 @@ export class GroupCallRoom {
     }
 
     async createWebRtcEndpoint(userId, key) {
+
         return new Promise((resolve, reject) => {
             this.pipeline.create('WebRtcEndpoint', (error, webRtcEndpoint) => {
                 if (error) {
                     return reject(error);
                 }
+
+                console.log('\t shift candidatesQueue ' + userId + '  ' + key);
                 if (this.candidatesQueue[userId]) {
                     if (!key) {
                         key = 0;
@@ -161,6 +141,7 @@ export class GroupCallRoom {
                     if (this.candidatesQueue[userId][key]) {
                         while(this.candidatesQueue[userId][key].length) {
                             const candidate = this.candidatesQueue[userId][key].shift();
+                            console.log('\t\t add candidatesQueue ' + userId + '  ' + key + '  ' + candidate);
                             webRtcEndpoint.addIceCandidate(candidate);
                         }
                     }
@@ -168,6 +149,7 @@ export class GroupCallRoom {
 
                 webRtcEndpoint.on('OnIceCandidate', function(event) {
                     const candidate = kurento.getComplexType('IceCandidate')(event.candidate);
+                    console.log('\t on ice candidatesQueue ' + userId + '  ' + key + '  ' + candidate);
                     userRegistry.getById(userId).ws.send(JSON.stringify({
                         id : 'iceCandidate',
                         key,

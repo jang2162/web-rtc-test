@@ -4,6 +4,7 @@ import {WebRtcPeer} from 'kurento-utils'
 let ws = new WebSocket('wss://' + location.host);
 
 ws.onopen = function () {
+    console.log('0.Socket Connected');
     sendMessage({
         id: 'init',
         value: 'groupCall'
@@ -45,6 +46,7 @@ $(function () {
             $nameInp.trigger('focus');
             return;
         }
+        console.log('1. Register');
         sendMessage({
             id: 'register',
             name
@@ -76,6 +78,7 @@ $(function () {
     });
 
     $createRoom.on('click', function () {
+        console.log('3. CreateRoom ' + sdpOffer);
         sendMessage({
             id : 'createRoom',
             sdpOffer
@@ -85,8 +88,9 @@ $(function () {
 
     $rooms.on('click', 'li>button', function () {
         roomId = $(this).data('room-id');
+        console.log('3. Join ' + roomId);
         sendMessage({
-            id : 'join',
+            id : 'roomEnter',
             sdpOffer,
             roomId
         });
@@ -99,12 +103,14 @@ window.onbeforeunload = function() {
 
 ws.onmessage = function(message) {
     const parsedMessage = JSON.parse(message.data);
-    console.info('Received message: ' + message.data);
+    // console.info('Received message: ' + message.data);
     switch (parsedMessage.id) {
         case 'newRooms':
+            console.log('newRooms');
             newRooms(parsedMessage.rooms);
             break;
         case 'registerResponse':
+            console.log('2. Register Response');
             newRooms(parsedMessage.rooms);
             break;
         case 'joinResponse':
@@ -120,9 +126,11 @@ ws.onmessage = function(message) {
             if (parsedMessage.key) {
                 const stream = streams.find(item => item.user.id == parsedMessage.key);
                 if (stream) {
+                    console.log('iceCandidate ' + parsedMessage.key + ' ' + JSON.stringify(parsedMessage.candidate));
                     stream.peer.addIceCandidate(parsedMessage.candidate);
                 }
             } else {
+                console.log('iceCandidate [NULL]' + JSON.stringify(parsedMessage.candidate));
                 webRtcPeer.addIceCandidate(parsedMessage.candidate);
             }
             break;
@@ -144,18 +152,21 @@ function newRooms(rooms) {
 }
 
 function joinResponse(data) {
+    console.log('4.3. join response ' + data.sdpAnswer);
     $rooms.hide();
     $roomName.text(data.name);
     roomId = data.roomId;
     webRtcPeer.processAnswer(data.sdpAnswer);
     for (const item of data.users) {
-        addStream(item.user, item.sdpAnswer);
+        addStream(item.user);
     }
 }
 
 function connectResponse(data) {
     const stream = streams.find(item => item.user.id == data.userId);
+    console.log('connectResponse ' + data.userId);
     if (stream) {
+        console.log('connectResponseSdpAnswer ' + data.sdpAnswer);
         stream.peer.processAnswer(data.sdpAnswer);
     }
 }
@@ -165,7 +176,9 @@ function join(data) {
 }
 
 function addStream(user) {
-    const videoEle = document.createElement('video');
+    console.log('addStream ' + user.id);
+    // const videoEle = document.createElement('video');
+    const videoEle = document.getElementById('temp');
     const options = {
         remoteVideo: videoEle,
         onicecandidate : (candidate) => {
@@ -187,6 +200,7 @@ function addStream(user) {
                 videoEle
             });
 
+            console.log('connect ' + user.id + '  ' + sdpOffer);
             sendMessage({
                 id : 'connect',
                 userId: user.id,

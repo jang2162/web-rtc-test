@@ -9,8 +9,7 @@ let idCounter = 0;
 
 export function groupCallWs(ws) {
     var sessionId = nextUniqueId();
-    console.log('Connection received with sessionId ' + sessionId);
-
+    console.log('0.Connection received with sessionId ' + sessionId);
     ws.on('error', function(error) {
         console.log('Connection ' + sessionId + ' error');
         stop(sessionId);
@@ -24,7 +23,7 @@ export function groupCallWs(ws) {
 
     ws.on('message', async function(_message) {
         var message = JSON.parse(_message);
-        console.log('Connection ' + sessionId + ' received message ', message);
+        // console.log('Connection ' + sessionId + ' received message ', message);
 
         switch (message.id) {
             case 'register':
@@ -34,8 +33,8 @@ export function groupCallWs(ws) {
             case 'createRoom':
                 await createRoom(sessionId, message.sdpOffer, ws);
                 break;
-            case 'join':
-                await join(sessionId, message.sdpOffer, message.roomId, ws);
+            case 'roomEnter':
+                await roomEnter(sessionId, message.sdpOffer, message.roomId, ws);
                 break;
             case 'connect':
                 await connect(sessionId, message.sdpOffer, message.roomId, message.userId, ws);
@@ -47,7 +46,6 @@ export function groupCallWs(ws) {
             case 'onIceCandidate':
                 onIceCandidate(sessionId, message.roomId, message.key, message.candidate);
                 break;
-
             default:
                 ws.send(JSON.stringify({
                     id : 'error',
@@ -101,12 +99,12 @@ function register(id, name, ws, callback) {
     if (userRegistry.getByName(name)) {
         return onError("User " + name + " is already registered");
     }
-
+    console.log('1. Register');
     userRegistry.register(new UserSession(id, name, ws));
     try {
+        console.log('2. Register Response');
         ws.send(JSON.stringify({
             id: 'registerResponse',
-            response: 'accepted',
             rooms: rooms.map(({id, name}) => ({id, name}))
         }));
     } catch(exception) {
@@ -115,6 +113,7 @@ function register(id, name, ws, callback) {
 }
 
 async function createRoom(id, sdpOffer, ws) {
+    console.log('3. CreateRoom' + sdpOffer);
     const user = userRegistry.getById(id);
     user.joined = true;
     const roomId = id + '-' + new Date().getTime();
@@ -136,7 +135,7 @@ async function createRoom(id, sdpOffer, ws) {
     }
 }
 
-async function join(id, sdpOffer, roomId, ws) {
+async function roomEnter(id, sdpOffer, roomId, ws) {
     const room = rooms.find(item => item.id === roomId);
     if (!room) {
 
@@ -159,7 +158,7 @@ async function connect(id, sdpOffer, roomId, userId, ws) {
             error: 'roomNotFound'
         }));
     }
-
+    console.log('connect ' + userId + '  ' + sdpOffer);
     const sdpAnswer = await room.connect(id, userId, sdpOffer);
     ws.send(JSON.stringify({
         id: 'connectResponse',
