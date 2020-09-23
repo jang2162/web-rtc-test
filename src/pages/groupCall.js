@@ -234,6 +234,7 @@ function addStream(user) {
             videoEle
         ])
     );
+    videoEle.play();
 
 }
 
