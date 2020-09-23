@@ -1,4 +1,5 @@
 import * as kurento from 'kurento-client';
+import {getKurentoClient} from '../../getKurentoClient'
 
 
 let idCounter = 0;
@@ -84,24 +85,6 @@ export function one2manyWs(ws) {
     });
 }
 
-
-// Recover kurentoClient for the first time.
-function getKurentoClient(callback) {
-    if (kurentoClient !== null) {
-        return callback(null, kurentoClient);
-    }
-
-    kurento(argv.ws_uri, function(error, _kurentoClient) {
-        if (error) {
-            console.log("Could not find media server at address " + argv.ws_uri);
-            return callback("Could not find media server at address" + argv.ws_uri
-                + ". Exiting with error " + error);
-        }
-
-        kurentoClient = _kurentoClient;
-        callback(null, kurentoClient);
-    });
-}
 
 function startPresenter(sessionId, ws, sdpOffer, callback) {
     clearCandidatesQueue(sessionId);
