@@ -171,12 +171,12 @@ function newRooms(rooms) {
 }
 
 function roomEnterResponse(data) {
-    if (!data.sdpAnswer) {
-        return;
-    }
-    console.log('4.3. roomEnterResponse ' + data.sdpAnswer);
     $rooms.hide();
-    webRtcPeer.processAnswer(data.sdpAnswer);
+    if (data.sdpAnswer) {
+        console.log('4.3. roomEnterResponse ' + data.sdpAnswer);
+        webRtcPeer.processAnswer(data.sdpAnswer);
+    }
+
     for (const item of data.users) {
         addStream(item.user);
     }
