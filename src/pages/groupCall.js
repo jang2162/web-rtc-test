@@ -234,7 +234,7 @@ function addStream(user) {
             videoEle
         ])
     );
-    videoEle.play();
+    videoEle.addEventListener("loadeddata", () => videoEle.play());
 
 }
 
