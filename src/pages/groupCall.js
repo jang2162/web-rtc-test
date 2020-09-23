@@ -121,19 +121,11 @@ ws.onmessage = function(message) {
 function createRoomResponse(data) {
     roomId = data.roomId;
     $roomName.text(data.roomName);
-    roomEnter(true);
+    roomEnter();
 }
 
-function roomEnter(flag) {
+function roomEnter() {
     console.log('3. roomEnter ' + roomId);
-
-    if (!flag) {
-        sendMessage({
-            id : 'roomEnter',
-            roomId
-        });
-        return;
-    }
 
     const options = {
         localVideo : $meVideo[0],
