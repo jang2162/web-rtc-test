@@ -155,7 +155,7 @@ function roomEnter(flag) {
             });
         });
     });
-    $meVideo[0].play();
+    $meVideo[0].addEventListener("loadeddata", () => $meVideo[0].play());
 }
 
 function newRooms(rooms) {
@@ -197,8 +197,7 @@ function join(data) {
 
 function addStream(user) {
     console.log('addStream ' + user.id);
-    // const videoEle = document.createElement('video');
-    const videoEle = document.getElementById('temp');
+    const videoEle = document.createElement('video');
     const options = {
         remoteVideo: videoEle,
         onicecandidate : (candidate) => {
