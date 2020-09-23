@@ -4,7 +4,6 @@ import {getKurentoClient} from '../../getKurentoClient'
 
 let idCounter = 0;
 const candidatesQueue = {};
-let kurentoClient = null;
 let presenter = null;
 let viewers = [];
 const noPresenterMessage = 'No active presenter. Try again later...';
@@ -275,8 +274,11 @@ function stop(sessionId) {
 
     if (viewers.length < 1 && !presenter) {
         console.log('Closing kurento client');
-        kurentoClient.close();
-        kurentoClient = null;
+        getKurentoClient(function (_, kurentoClient) {
+            kurentoClient.close();
+            kurentoClient = null;
+        })
+
     }
 }
 
