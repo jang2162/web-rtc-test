@@ -33,16 +33,16 @@ export class GroupCallRoom {
             endPoints: []
         }
 
-        // for (const userDataA of this.userDataList) {
-            // userDataA.user.ws.send(JSON.stringify({
-            //     id: 'join',
-            //     roomId: this.id,
-            //     user: {
-            //         id: userData.user.id,
-            //         name: userData.user.name
-            //     }
-            // }));
-        // }
+        for (const userDataA of this.userDataList) {
+            userDataA.user.ws.send(JSON.stringify({
+                id: 'join',
+                roomId: this.id,
+                user: {
+                    id: userData.user.id,
+                    name: userData.user.name
+                }
+            }));
+        }
 
         console.log('4.3. join response ' + sdpAnswer);
         userData.user.ws.send(JSON.stringify({
