@@ -245,6 +245,26 @@ function startViewer(sessionId, ws, sdpOffer, callback) {
     });
 }
 
+
+function onIceCandidate(sessionId, _candidate) {
+    const candidate = kurento.getComplexType('IceCandidate')(_candidate);
+
+    if (presenter && presenter.id === sessionId && presenter.webRtcEndpoint) {
+        console.info('Sending presenter candidate');
+        presenter.webRtcEndpoint.addIceCandidate(candidate);
+    }
+    else if (viewers[sessionId] && viewers[sessionId].webRtcEndpoint) {
+        console.info('Sending viewer candidate');
+        viewers[sessionId].webRtcEndpoint.addIceCandidate(candidate);
+    }
+    else {
+        console.info('Queueing candidate');
+        if (!candidatesQueue[sessionId]) {
+            candidatesQueue[sessionId] = [];
+        }
+        candidatesQueue[sessionId].push(candidate);
+    }
+}
 function clearCandidatesQueue(sessionId) {
     if (candidatesQueue[sessionId]) {
         delete candidatesQueue[sessionId];
@@ -271,33 +291,11 @@ function stop(sessionId) {
     }
 
     clearCandidatesQueue(sessionId);
-
     if (viewers.length < 1 && !presenter) {
         console.log('Closing kurento client');
         getKurentoClient(function (_, kurentoClient) {
             kurentoClient.close();
             kurentoClient = null;
         })
-
-    }
-}
-
-function onIceCandidate(sessionId, _candidate) {
-    const candidate = kurento.getComplexType('IceCandidate')(_candidate);
-
-    if (presenter && presenter.id === sessionId && presenter.webRtcEndpoint) {
-        console.info('Sending presenter candidate');
-        presenter.webRtcEndpoint.addIceCandidate(candidate);
-    }
-    else if (viewers[sessionId] && viewers[sessionId].webRtcEndpoint) {
-        console.info('Sending viewer candidate');
-        viewers[sessionId].webRtcEndpoint.addIceCandidate(candidate);
-    }
-    else {
-        console.info('Queueing candidate');
-        if (!candidatesQueue[sessionId]) {
-            candidatesQueue[sessionId] = [];
-        }
-        candidatesQueue[sessionId].push(candidate);
     }
 }

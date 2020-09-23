@@ -76,19 +76,17 @@ function presenter() {
         webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
             if(error) return console.error(error);
 
-            this.generateOffer(onOfferPresenter);
+            this.generateOffer((error, offerSdp) => {
+                if (error) return console.error(error);
+
+                const message = {
+                    id : 'presenter',
+                    sdpOffer : offerSdp
+                };
+                sendMessage(message);
+            });
         });
     }
-}
-
-function onOfferPresenter(error, offerSdp) {
-    if (error) return console.error(error);
-
-    const message = {
-        id : 'presenter',
-        sdpOffer : offerSdp
-    };
-    sendMessage(message);
 }
 
 function viewer() {
@@ -101,19 +99,17 @@ function viewer() {
         webRtcPeer = WebRtcPeer.WebRtcPeerRecvonly(options, function(error) {
             if(error) return console.error(error);
 
-            this.generateOffer(onOfferViewer);
+            this.generateOffer((error, offerSdp) => {
+                if (error) return console.error(error)
+
+                const message = {
+                    id : 'viewer',
+                    sdpOffer : offerSdp
+                }
+                sendMessage(message);
+            });
         });
     }
-}
-
-function onOfferViewer(error, offerSdp) {
-    if (error) return console.error(error)
-
-    const message = {
-        id : 'viewer',
-        sdpOffer : offerSdp
-    }
-    sendMessage(message);
 }
 
 function onIceCandidate(candidate) {

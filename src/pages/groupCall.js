@@ -121,40 +121,38 @@ ws.onmessage = function(message) {
 function createRoomResponse(data) {
     roomId = data.roomId;
     $roomName.text(data.roomName);
-    roomEnter();
+    roomEnter(true);
 }
 
-function roomEnter() {
+function roomEnter(flag) {
     console.log('3. roomEnter ' + roomId);
-    createSendOnlyPeer( err => {
-        if (err) {
-            return console.error(err);
-        }
+
+    if (!flag) {
         sendMessage({
             id : 'roomEnter',
-            sdpOffer,
             roomId
         });
-    });
-}
+        return;
+    }
 
-function createSendOnlyPeer(cb) {
     const options = {
         localVideo : $meVideo[0],
         onicecandidate: onIceCandidate
     }
-
     webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
         if (error) {
-            return cb(error);
+            return console.error(error);
         }
 
-        this.generateOffer(function(error, offerSdp) {
+        this.generateOffer(function(error, sdpOffer) {
             if (error) {
-                return cb(error);
+                return console.error(error);
             }
-            sdpOffer = offerSdp;
-            cb(null);
+            sendMessage({
+                id : 'roomEnter',
+                sdpOffer,
+                roomId
+            });
         });
     });
     $meVideo[0].play();
@@ -173,6 +171,9 @@ function newRooms(rooms) {
 }
 
 function roomEnterResponse(data) {
+    if (!data.sdpAnswer) {
+        return;
+    }
     console.log('4.3. roomEnterResponse ' + data.sdpAnswer);
     $rooms.hide();
     webRtcPeer.processAnswer(data.sdpAnswer);
@@ -215,7 +216,6 @@ function addStream(user) {
             streams.push({
                 peer,
                 user,
-                sdpOffer,
                 videoEle
             });
 

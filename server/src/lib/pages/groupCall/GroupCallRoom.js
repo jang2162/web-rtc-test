@@ -18,18 +18,22 @@ export class GroupCallRoom {
     async addUser(user, sendSdpOffer) {
         console.log('4. AddUser');
         console.log('4.1. CreateWebRtcEndpoint');
-        const webEndPoint = await this.createWebRtcEndpoint(user.id);
         console.log('4.2. GenerateSendSdpAnswer');
-        const sdpAnswer = await this.generateSdpAnswer(webEndPoint, sendSdpOffer);
+        let webEndPoint;
+        let sdpAnswer;
+        if (sendSdpOffer) {
+            webEndPoint = await this.createWebRtcEndpoint(user.id);
+            sdpAnswer = await this.generateSdpAnswer(webEndPoint, sendSdpOffer);
+        }
+
         const userData = {
             user,
             sdpAnswer,
             webEndPoint,
-            sendSdpOffer,
             endPoints: []
         }
 
-        for (const userDataA of this.userDataList) {
+        // for (const userDataA of this.userDataList) {
             // userDataA.user.ws.send(JSON.stringify({
             //     id: 'join',
             //     roomId: this.id,
@@ -38,7 +42,7 @@ export class GroupCallRoom {
             //         name: userData.user.name
             //     }
             // }));
-        }
+        // }
 
         console.log('4.3. join response ' + sdpAnswer);
         userData.user.ws.send(JSON.stringify({
