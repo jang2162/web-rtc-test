@@ -8,6 +8,7 @@ import {one2oneWs} from './src/lib/pages/one2one/one2one';
 import {groupCallWs} from './src/lib/pages/groupCall/groupCallWs';
 import * as ws from 'ws'
 import {one2manyWs} from './src/lib/pages/one2many/one2manyWs'
+import {many2manyWs} from './src/lib/pages/many2many/many2manyWs'
 
 var options =
     {
@@ -43,6 +44,8 @@ var server = createServer(options, app).listen(port, function (event, listener) 
                     groupCallWs(ws);
                 } else if (message.value === 'one2many') {
                     one2manyWs(ws);
+                } else if (message.value === 'many2many') {
+                    many2manyWs(ws);
                 }
             }
         };
