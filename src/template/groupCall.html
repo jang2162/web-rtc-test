@@ -4,30 +4,48 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Kurento Tutorial 4: Video Call 1 to 1 with WebRTC</title>
+    <link rel="stylesheet" href="/assets/css/groupCall.css">
 </head>
 <body>
+<header>
+    <h1>Kurento Web RTC <br>Many to Many example</h1>
+    <div id="profile">이름: <span id="myName"></span></div>
+
+</header>
 
 <div id="step1">
-    <input type="text" id="nameInp">
-    <button id="nameOk">확인</button>
+    <input type="text" id="nameInp" class="inp" required placeholder="이름을 입력해주세요.">
+    <div style="text-align: right">
+        <button id="nameOk" class="btn">다음</button>
+    </div>
 </div>
+
 
 <div id="step2">
-    <button id="createRoom">방 생성</button>
+    <div style="text-align: right">
+        <button id="createRoom" class="btn">+ 방 생성</button>
+    </div>
     <ul id="rooms"></ul>
-    <div id="chat"></div>
-    <div id="me">
-        <video></video>
-        <span></span>
-    </div>
+</div>
 
+<div id="step3">
 
-    <div id="roomDetail">
+    <div id="videos">
         <span id="roomName"></span>
+        <div style="clear: both"></div>
+
+        <div class="video-wrapper">
+            <div>
+                <video id="myVideo"></video>
+            </div>
+        </div>
         <ul id="streams"></ul>
+        <div style="clear: both"></div>
     </div>
+
+    <div id="chat"></div>
 
 </div>
-<video id="temp"></video>
+
 </body>
 </html>

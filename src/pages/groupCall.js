@@ -17,26 +17,30 @@ let $step1;
 let $nameInp;
 let $nameOk;
 let $step2;
+let $step3;
 let $createRoom;
 let $rooms;
 let $chat;
-let $me;
-let $meVideo;
+let $myVideo;
 let $streams;
 let $roomName;
+let $profile;
+let $myName;
 let streams = [];
 let roomId;
 $(function () {
+    $profile = $("#profile");
+    $myName = $("#myName");
     $step1 = $("#step1");
+    $step3 = $("#step3");
     $nameInp = $("#nameInp");
     $nameOk = $("#nameOk");
     $roomName = $("#roomName");
-    $step2 = $("#step2").hide();
+    $step2 = $("#step2");
     $createRoom = $("#createRoom").prop('disabled', true);
     $rooms = $("#rooms");
     $chat = $("#chat");
-    $me = $("#me");
-    $meVideo = $me.find('video');
+    $myVideo = $('#myVideo');
     $streams = $("#streams");
 
     $nameOk.on('click',function () {
@@ -51,10 +55,11 @@ $(function () {
             id: 'register',
             name
         });
+        $myName.text(name);
         $createRoom.prop('disabled', false);
+        $profile.show();
         $step1.hide();
         $step2.show();
-        $me.find('span').text(name);
     });
 
     $createRoom.on('click', function () {
@@ -62,7 +67,8 @@ $(function () {
         sendMessage({
             id : 'createRoom'
         });
-        $(this).remove();
+        $step2.hide();
+        $step3.show();
     });
 
     $rooms.on('click', 'li>button', function () {
@@ -70,6 +76,8 @@ $(function () {
         const roomName = $(this).data('room-name');
         $roomName.text(roomName);
         roomEnter();
+        $step2.hide();
+        $step3.show();
     })
 })
 
@@ -128,7 +136,7 @@ function roomEnter() {
     console.log('3. roomEnter ' + roomId);
 
     const options = {
-        localVideo : $meVideo[0],
+        localVideo : $myVideo[0],
         onicecandidate: onIceCandidate
     }
     webRtcPeer = WebRtcPeer.WebRtcPeerSendonly(options, function(error) {
@@ -147,7 +155,7 @@ function roomEnter() {
             });
         });
     });
-    $meVideo[0].addEventListener("loadeddata", () => $meVideo[0].play());
+    $myVideo[0].addEventListener("loadeddata", () => $myVideo[0].play());
 }
 
 function newRooms(rooms) {
@@ -156,9 +164,9 @@ function newRooms(rooms) {
         $rooms.append(
             $("<li/>").append([
                 $("<span/>").html(room.name),
-                $("<button/>").text('join').data('room-id', room.id).data('room-name', room.name)
+                $("<button/>").addClass('btn btn-white btn-sm').text('JOIN').data('room-id', room.id).data('room-name', room.name)
             ])
-        )
+        );
     }
 }
 
@@ -222,7 +230,7 @@ function addStream(user) {
     $streams.append(
         $("<li/>").append([
             $("<span/>").text(user.name),
-            videoEle
+            $("<div/>").addClass('video-wrapper').append($("<div/>").append(videoEle))
         ])
     );
     videoEle.addEventListener("loadeddata", () => videoEle.play());
